@@ -1,7 +1,6 @@
 export getData
 
 function getData(m,pFor::FWIparam,doClear::Bool=false)
-
     # extract pointers
     M       	= pFor.Mesh
     omega   	= pFor.omega
@@ -21,6 +20,8 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
     m = An2cc'*m;
 	gamma = An2cc'*gamma;
 
+	println("In getData M.n $(M.n.+1)")
+	println("In getData omega $(omega)")
 	# allocate space for data and fields
 	n_nodes = prod(M.n.+1);
 	# ALL AT ONCE DIRECT CODE
@@ -75,7 +76,11 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 
 		@time begin
 			ts = time_ns();
-			U,Ainv = solveLinearSystem(H,U,Ainv,0)
+			println("In getData - before solveLinearSystem")
+			println("H size $(size(H))")
+			println("U size $(size(U))")
+			println("batch size $(batchSize)")
+			U,Ainv = solveLinearSystem(HH,U,Ainv,0)
 			es = time_ns();
 			println("Runtime of Solve LS: ", (es - ts) / 10e9);
 		end

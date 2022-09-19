@@ -54,15 +54,17 @@ useFilesForFields = false; # wheter to save fields to files
 
 ########## uncomment block for SEG ###############
  dim     = 2;
- pad     = 30;
+ pad     = 30; #change to 28
  jumpSrc = 5;
  jumpRcv = 1;
- newSize = [600,300];
+#  newSize = [600,300];
+ newSize = [300,150];
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 
-omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
+# omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
+omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
@@ -87,11 +89,11 @@ resultsFilename = string(resultsFilename,".dat");
 
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
 ABLpad = pad + 4;
-Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=3);
+# Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
+Ainv = getJuliaSolver();
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
-
 
 figure(1,figsize = (22,10));
 plotModel(m,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],figTitle="mref",filename="orig.png");
@@ -171,7 +173,8 @@ mc = copy(mref[:]);
 N_nodes = prod(Minv.n.+1);
 nsrc = size(Q,2);
 p = 16;
-Z1 = 2e-4*rand(ComplexF64,(N_nodes, p));
+# Z1 = 2e-4*rand(ComplexF64,(N_nodes, p));
+Z1 = 0*rand(ComplexF64,(N_nodes, p));
 
 function saveCheckpoint(resultsFilename,mc,Z1,Z2,alpha1,alpha2,pInv,cyc)
 	file = matopen(string(splitext(resultsFilename)[1],"_Cyc",cyc,"_checkpoint.mat"), "w");
