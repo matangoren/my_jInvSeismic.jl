@@ -39,7 +39,6 @@ export FreqContParam, getFreqContParams
 mutable struct FreqContParam
 	mc						:: Vector{Float64}
 	itersNum				:: Int64
-	originalSources			:: SparseMatrixCSC
 	nrcv					:: Int64
 	pInv					:: InverseParam
 	pMis					:: Array{RemoteChannel}
@@ -62,14 +61,13 @@ mutable struct FreqContParam
 	updateMref				:: Bool
 end
 
-function getFreqContParams(mc,itersNum::Int64,
-		originalSources::SparseMatrixCSC,nrcv, pInv::InverseParam,
+function getFreqContParams(mc,itersNum::Int64,nrcv, pInv::InverseParam,
 		pMis::Array{RemoteChannel}, windowSize::Int64, resultsFilename::String,
 		dumpFun::Function,Iact,mback;Z1=0,simSrcDim=1,
 		alpha1=0.0, alpha2Orig=0.0, stepReg=0.0, mode::String="", startFrom::Int64 = 1,
 		endAt=length(pMis),cycle::Int64=0, method::String="projGN",
 		FWImethod::String="FWI",updateMref=false)
-		return FreqContParam(mc, itersNum, originalSources,
+		return FreqContParam(mc, itersNum,
 				nrcv, pInv, pMis, windowSize, resultsFilename, dumpFun,
 				Iact, mback, Z1, simSrcDim, alpha1, alpha2Orig, stepReg,
 				mode, startFrom, endAt, cycle, method, FWImethod, updateMref)
@@ -217,26 +215,27 @@ function calculateZ1(m, misfitCalc::Function, nfreq::Integer, mergedWd::Array, m
 	return Z1;
 end
 
-function standardGNrun(method, mc, simSrcDim, originalSources, pInv, pMisTemp,
+function standardGNrun(method, mc, simSrcDim, pInv, pMisTemp,
 		HIS, resultsFilename, cycle, freqIdx, dumpFun)
 pMisTempFetched = map(fetch, pMisTemp);
+orig_sources = map(x -> x.pFor.OriginalSources,pMisTempFetched)
 dobs = map(x -> x.dobs,pMisTempFetched)
 wd = map(x-> x.Wd,pMisTempFetched)
-nsrc = size(originalSources,2);
+nsrc = size(orig_sources[1],2);
 
-if simSrcDim==1
+if simSrcDim==0
 	TEmat = Matrix(1.0I,nsrc,nsrc)
 else
 	TEmat = rand([-1,1],(nsrc,simSrcDim));
 end
 
-if simSrcDim > 1
-	reducedSources = originalSources * TEmat;
+if simSrcDim > 0
+	reducedSources = map(x-> x*TEmat, orig_sources);
 	reducedDobs = map(x-> x*TEmat, dobs);
 	sizeWD = size(reducedDobs[1])
 	reducedWd = map(x-> mean(x)/sqrt(simSrcDim) * ones(sizeWD), wd);
 
-	pMisTemp = setSourcesSame(pMisTemp,reducedSources);
+	pMisTemp = setSources(pMisTemp,reducedSources);
 	pMisTemp = setDobs(pMisTemp,reducedDobs);
 	pMisTemp = setWd(pMisTemp,reducedWd);
 end
@@ -266,9 +265,9 @@ elseif method == "barrierGN"
 	mc,Dc,flag,His = barrierGNCG(mc,pInv,pMisTemp,rho=1.0,dumpResults = dumpGN);
 end
 
-if simSrcDim > 1
+if simSrcDim > 0
 	# set full data back
-	pMisTemp = setSourcesSame(pMisTemp,originalSources);
+	pMisTemp = setSources(pMisTemp,originalSources);
 	pMisTemp = setDobs(pMisTemp,dobs)
 	pMisTemp = setWd(pMisTemp,wd)
 end
@@ -288,21 +287,23 @@ clear!(pMisTemp);
 return mc,Dc,flag,HIS
 end
 
-function ExtendedSourcesGNRun(method, mc, simSrcDim, nrcv, itersNum, originalSources,
+function ExtendedSourcesGNRun(method, mc, simSrcDim, nrcv, itersNum,
 		Z1, alpha1, alpha2, stepReg, pInv, pMisTemp, HIS, resultsFilename,
 		cycle, freqIdx, dumpFun)
+		
+error("this code needs to be fixed to have Z1 per frequency, since adaptive meshes were added.")
 numOfCurrentProblems = length(pMisTemp);
 N_nodes = prod(pInv.MInv.n .+ 1);
-nsrc = size(originalSources, 2);
+
 p = size(Z1,2);
 nwork = nworkers()
-nsrc = size(originalSources, 2);
 nfreq = length(pMisTemp);
 wheres = map(x -> x.where, pMisTemp);
 pMisTempFetched = map(fetch, pMisTemp);
 mergedDobs = map(x -> x.dobs,pMisTempFetched)
 mergedWd = map(x-> x.Wd,pMisTempFetched)
-
+orig_sources = map(x -> x.pFor.OriginalSources,pMisTempFetched)
+nsrc = size(orig_sources[1], 2);
 ##########################
 # Initialize outputs	 #
 ##########################
@@ -319,18 +320,18 @@ for j = 1:itersNum
 	println("============================== New ALM Iter ======================================");
 	flush(Base.stdout)
 
-	if simSrcDim==1
+	if simSrcDim==0
 		TEmat = Matrix(1.0I,nsrc,nsrc)
 	else
 		TEmat = rand([-1,1],(nsrc,simSrcDim));
 	end
 
-	reducedSources = originalSources * TEmat;
+	reducedSources = map(x-> x*TEmat, orig_sources);
 	reducedDobs = map(x-> x*TEmat, mergedDobs);
 	sizeWD = size(reducedDobs[1])
 	reducedWd = map(x-> mean(x)/sqrt(simSrcDim) * ones(sizeWD), mergedWd);
 
-	pMisTemp = setSourcesSame(pMisTemp,reducedSources);
+	pMisTemp = setSources(pMisTemp,reducedSources);
 	pMisTemp = setDobs(pMisTemp,reducedDobs);
 	pMisTemp = setWd(pMisTemp,reducedWd);
 
@@ -408,7 +409,7 @@ for j = 1:itersNum
 
 	newSources = originalSources * TEmat + Z1 * Z2;
 
-	pMisTemp = setSourcesSame(pMisTemp,newSources);
+	pMisTemp = setSources(pMisTemp,newSources);
 	pMisTemp = setDobs(pMisTemp,reducedDobs)
 	pMisTemp = setWd(pMisTemp,reducedWd)
 
@@ -454,7 +455,7 @@ for j = 1:itersNum
 	push!(HIS,His)
 end
 
-pMisTemp = setSourcesSame(pMisTemp,originalSources);
+pMisTemp = setSources(pMisTemp,originalSources);
 pMisTemp = setDobs(pMisTemp,mergedDobs)
 pMisTemp = setWd(pMisTemp,mergedWd)
 
@@ -470,7 +471,6 @@ end
 function freqCont(freqContParam::FreqContParam)
 mc = freqContParam.mc
 itersNum = freqContParam.itersNum
-originalSources = freqContParam.originalSources
 nrcv = freqContParam.nrcv
 pInv = freqContParam.pInv
 pMis = freqContParam.pMis
@@ -524,12 +524,12 @@ for freqIdx = startFrom:endAt
 	println("\n======= New Continuation Stage: selecting continuation batches: ",reqIdx1," to ",reqIdx2,"=======\n");
 	if FWImethod == "FWI"
 		pInv.maxIter = itersNum;
-		mc,Dc,flag,HIS = standardGNrun(method, mc, simSrcDim, originalSources,
+		mc,Dc,flag,HIS = standardGNrun(method, mc, simSrcDim,
 		 		pInv, pMisTemp, HIS, resultsFilename, cycle, freqIdx, dumpFun)
 	elseif FWImethod == "FWI_ES"
 		pInv.maxIter = 1;
 		mc,Z1,Z2,alpha1,alpha2,Dc,flag,HIS = ExtendedSourcesGNRun(
-				method, mc, simSrcDim, nrcv, itersNum, originalSources,
+				method, mc, simSrcDim, nrcv, itersNum, 
 				Z1,alpha1, alpha2, stepReg, pInv, pMisTemp, HIS,
 				resultsFilename, cycle, freqIdx, dumpFun)
 	end

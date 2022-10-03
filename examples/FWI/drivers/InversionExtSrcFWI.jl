@@ -1,4 +1,4 @@
-using Revise
+#using Revise
 using Distributed
 using DelimitedFiles
 using MAT
@@ -11,14 +11,14 @@ using jInv.InverseSolve
 using jInv.LinearSolvers
 using Multigrid
 
-NumWorkers = 4;
-if nworkers() == 1
-	addprocs(NumWorkers);
-elseif nworkers() < NumWorkers
- 	addprocs(NumWorkers - nworkers());
-end
+#NumWorkers = 1;
+#if nworkers() == 1
+#	addprocs(NumWorkers);
+#elseif nworkers() < NumWorkers
+# 	addprocs(NumWorkers - nworkers());
+#end
 
-@everywhere begin
+#@everywhere begin
 	using jInv.InverseSolve
 	using jInv.LinearSolvers
 	using jInvSeismic.FWI
@@ -28,7 +28,7 @@ end
 	using DelimitedFiles
 	using jInv.ForwardShare
 	using KrylovMethods
-end
+#end
 
 plotting = true;
 if plotting
@@ -47,24 +47,25 @@ modelDir 	= pwd();
 
 ########################################################################################################
 windowSize = 4; # frequency continuation window size
-simSrcDim = 16; # change to 1 for no simultaneous sources
+simSrcDim = 16; # change to 0 for no simultaneous sources
 maxBatchSize = 256; # use smaller value for 3D
 useFilesForFields = false; # wheter to save fields to files
 
 
 ########## uncomment block for SEG ###############
  dim     = 2;
- pad     = 30; #change to 28
- jumpSrc = 5;
+ pad     = 32; 
+ jumpSrc = 2;
  jumpRcv = 1;
 #  newSize = [600,300];
- newSize = [300,150];
+ newSize = [352,176];
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
-omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
+#omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
+omega = [2.0,2.5,3.5,4.5]*2*pi*0.9;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
@@ -102,8 +103,8 @@ figure(2,figsize = (22,10));
 plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],figTitle="mref",filename="mref.png");
 
 
-prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
-									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
+#prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
+#									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
 
 
 (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
@@ -206,11 +207,12 @@ end
 
 if norm(Z1) == 0.0
 	# Standard FWI run
-	freqContParams = getFreqContParams(mc, 0, Q,size(P,2), pInv, pMis,
+	println("Standard FWI run with sim sources dim = ",simSrcDim);
+	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
 			windowSize, resultsFilename,dump,Iact,sback,
 			simSrcDim = simSrcDim);
 else
-	freqContParams = getFreqContParams(mc, 0, Q,size(P,2), pInv, pMis,
+	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
 			windowSize, resultsFilename,dump,Iact,sback, Z1=Z1, alpha1=alpha1,
 			alpha2Orig=alpha2, stepReg=stepReg,
 			simSrcDim = simSrcDim, FWImethod="FWI_ES");
@@ -233,6 +235,6 @@ for i = 1:freqContSweeps
 		freqContParams.updateMref = false;
 		freqContParams.pInv.pcgMaxIter = 7;
 	end
-	mc, = freqCont(freqContParams);
+	global mc, = freqCont(freqContParams);
 	freqContParams.mc = mc;
 end

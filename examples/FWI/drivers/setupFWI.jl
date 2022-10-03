@@ -37,7 +37,6 @@ Q = Q.*1.0./(norm(Minv.h)^2);
 println("We have ",size(Q,2)," sources");
 P = generateSrcRcvProjOperators(Minv.n.+1,rcvNodeMap);
 
-
 ########################################################################################################
 ##### Set up remote workers ############################################################################
 ########################################################################################################
@@ -63,14 +62,21 @@ mref = Iact'*mref[:];
 ####################################################################################################################
 ####################################################################################################################
 
-println("Reading FWI data:");
+println("Set up FWI:");
+
+(Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(Minv,omega,Q,P,gamma);
 
 batch = min(size(Q,2),maxBatchSize);
 if useFreqOnlySplit
-	(pForFWI,contDivFWI,SourcesSubIndFWI) = getFWIparamFreqOnlySplit(omega,waveCoef,vec(gamma),Q,P,Minv,Ainv,workersFWI,batch,useFilesForFields);
+	(pForFWI,contDivFWI,SourcesSubIndFWI) = getFWIparamFreqOnlySplit(omega,waveCoef,gammas,Qs,Ps,Mfwds,Ainv,workersFWI,batch,useFilesForFields);
 else
-	(pForFWI,contDivFWI,SourcesSubIndFWI) = getFWIparam(omega,waveCoef,vec(gamma),Q,P,Minv,Ainv,workersFWI,batch,useFilesForFields);
+	(pForFWI,contDivFWI,SourcesSubIndFWI) = getFWIparam(omega,waveCoef,gammas,Qs,Ps,Mfwds,Ainv,workersFWI,batch,useFilesForFields);
 end
+
+Mesh2MeshRFs = prepareMesh2Mesh(pForFWI,Minv,false);
+
+println("Reading FWI data:");
+
 # write data to remote workers
 Wd   = Array{Array{ComplexF64,2}}(undef,length(pForFWI))
 dobs = Array{Array{ComplexF64,2}}(undef,length(pForFWI))
@@ -92,8 +98,7 @@ for k = 1:length(omega)
 	WdFWIwk = 0;
 end
 
-
-pMisFWIRFs = getMisfitParam(pForFWI, Wd, dobs, misfun, Iact,sback);
+pMisFWIRFs = getMisfitParam(pForFWI, Wd, dobs, misfun, Iact,sback,Mesh2MeshRFs);
 
 ########################################################################################################
 ##### Set up remote workers ############################################################################

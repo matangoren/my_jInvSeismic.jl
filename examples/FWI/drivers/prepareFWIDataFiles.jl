@@ -68,9 +68,14 @@ println("~~~~~~~ Getting data FWI: ~~~~~~~");
 # Solve forward problem (should be relaced in reading data from file)
 
 batch = min(size(Q,2),maxBatchSize);
-(pFor,contDiv,SourcesSubInd) = getFWIparam(omega,waveCoef,vec(gamma),Q,P,Minv,Ainv,workerList,batch,useFilesForFields);
 
-(D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,ones(length(pFor)),true);
+(Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(Minv,omega,Q,P,gamma);
+
+(pFor,contDiv,SourcesSubInd) = getFWIparam(omega,waveCoef,gammas,Qs,Ps,Mfwds,Ainv,workerList,batch,useFilesForFields);
+
+Mesh2MeshRFs = prepareMesh2Mesh(pFor,Minv,false);
+
+(D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,Mesh2MeshRFs,true);
 
 nsrc = size(Q,2);
 nrcv = size(P,2);

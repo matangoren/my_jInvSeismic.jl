@@ -18,6 +18,7 @@ using FFTW
 import jInv.ForwardShare.getData
 import jInv.ForwardShare.getSensTMatVec
 import jInv.ForwardShare.getSensMatVec
+import jInv.ForwardShare.prepareMesh2Mesh
 import jInv.LinearSolvers.copySolver
 
 import jInv.ForwardShare.ForwardProbType
@@ -53,17 +54,11 @@ mutable struct FWIparam <: ForwardProbType
 	useFilesForFields		:: Bool
 end
 
-function getFWIparam(omega::Float64, WaveletCoef::ComplexF64, gamma::Vector{Float64},
-							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Mesh::RegularMesh, ForwardSolver:: AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
-	return getFWIparam([omega], [WaveletCoef],gamma,Sources,Receivers, Mesh,ForwardSolver, workerList,forwardSolveBatchSize,useFilesForFields);
-end
 
-function getFWIparam(omega::Array{Float64}, WaveletCoef::Array{ComplexF64},gamma::Vector{Float64},
-							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Mesh::RegularMesh, ForwardSolver::AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
+function getFWIparam(omega::Array{Float64}, WaveletCoef::Array{ComplexF64},gamma::Union{Array{Vector{Float64}},Vector{Float64}},
+							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2},Array{SparseMatrixCSC}},
+							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2},Array{SparseMatrixCSC}},
+							Mesh::Union{RegularMesh,Array{RegularMesh}}, ForwardSolver::AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
 
 	continuationDivision = zeros(Int64,length(omega)+1);
 	continuationDivision[1] = 1;
@@ -80,24 +75,23 @@ function getFWIparam(omega::Array{Float64}, WaveletCoef::Array{ComplexF64},gamma
 	pFor   = Array{RemoteChannel}(undef,numWorkers*length(omega));
 	SourcesSubInd = Array{Array{Int64,1}}(undef,numWorkers*length(omega));
 	for k=1:length(omega)
-		getFWIparamInternal(omega[k],WaveletCoef[k], gamma,Sources,Receivers,zeros(FieldsType,0), Mesh,
+		if isa(Mesh,RegularMesh)
+			getFWIparamInternal(omega[k],WaveletCoef[k], gamma,Sources,Receivers,zeros(FieldsType,0), Mesh,
 									ForwardSolver, forwardSolveBatchSize ,ActualWorkers,pFor,(k-1)*numWorkers+1,SourcesSubInd,useFilesForFields);
+		else
+			getFWIparamInternal(omega[k],WaveletCoef[k], gamma[k],Sources[k],Receivers[k],zeros(FieldsType,0), Mesh[k],
+									ForwardSolver, forwardSolveBatchSize ,ActualWorkers,pFor,(k-1)*numWorkers+1,SourcesSubInd,useFilesForFields);
+			
+		end
 		continuationDivision[k+1] = k*numWorkers+1;
 	end
 	return pFor,continuationDivision,SourcesSubInd # Array of Remote Refs
 end
 
-function getFWIparamFreqOnlySplit(omega::Float64, WaveletCoef::ComplexF64, gamma::Vector{Float64},
-							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Mesh::RegularMesh, ForwardSolver:: AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
-	return getFWIparamFreqOnlySplit([omega], [WaveletCoef],gamma,Sources,Receivers, Mesh,ForwardSolver, workerList,forwardSolveBatchSize,useFilesForFields);
-end
-
-function getFWIparamFreqOnlySplit(omega::Array{Float64}, WaveletCoef::Array{ComplexF64},gamma::Vector{Float64},
-							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2}},
-							Mesh::RegularMesh, ForwardSolver::AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
+function getFWIparamFreqOnlySplit(omega::Array{Float64}, WaveletCoef::Array{ComplexF64},gamma::Union{Array{Vector{Float64}},Vector{Float64}},
+							Sources::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2},Array{SparseMatrixCSC}},
+							Receivers::Union{Vector{Float64},SparseMatrixCSC,Array{Float64,2},Array{SparseMatrixCSC}},
+							Mesh::Union{RegularMesh,Array{RegularMesh}}, ForwardSolver::AbstractSolver, workerList::Array{Int64},forwardSolveBatchSize::Int64=size(Sources,2),useFilesForFields::Bool = false)
 	if workerList==[]
 		ActualWorkers = workers();
 	else
@@ -109,8 +103,13 @@ function getFWIparamFreqOnlySplit(omega::Array{Float64}, WaveletCoef::Array{Comp
 	numWorkers = length(ActualWorkers);
 	pFor   = Array{RemoteChannel}(undef,length(omega));
 	for k=1:length(omega)
-		getFWIparamInternalFreqOnly(omega[k],WaveletCoef[k], gamma,Sources,Receivers,zeros(FieldsType,0), Mesh,
+		if isa(Mesh,RegularMesh)
+			getFWIparamInternalFreqOnly(omega[k],WaveletCoef[k], gamma,Sources,Receivers,zeros(FieldsType,0), Mesh,
 									ForwardSolver, forwardSolveBatchSize ,ActualWorkers[((k-1) % numWorkers) + 1],pFor,k,useFilesForFields);
+		else # is an array
+			getFWIparamInternalFreqOnly(omega[k],WaveletCoef[k], gamma[k],Sources[k],Receivers[k],zeros(FieldsType,0), Mesh[k],
+									ForwardSolver, forwardSolveBatchSize ,ActualWorkers[((k-1) % numWorkers) + 1],pFor,k,useFilesForFields);
+		end
 	end
 	return pFor,0,0 # Array of Remote Refs
 end
@@ -174,7 +173,7 @@ function clear!(pFor::FWIparam)
 	clear!(pFor.Mesh);
 	return pFor;
 end
-
+include("adaptedMeshes.jl")
 include("getData.jl")
 include("getSensMatVec.jl")
 include("getSensTMatVec.jl")

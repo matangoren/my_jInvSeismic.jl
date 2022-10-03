@@ -76,17 +76,17 @@ put!(pMisRF,pMis)
 return pMisRF;
 end
 
-function setSourcesSame(pMis::Array{RemoteChannel},newSources)
-@sync begin
-		for k=1:length(pMis)
-	@async begin
-			## TODO: make sure sources are replicated for different frequencies
-			pMis[k] = remotecall_fetch(setSources,pMis[k].where,pMis[k],newSources);
-		end
-	end
-end
-return pMis;
-end
+#function setSourcesSame(pMis::Array{RemoteChannel},newSources)
+#@sync begin
+#		for k=1:length(pMis)
+#	@async begin
+#			## TODO: make sure sources are replicated for different frequencies
+#			pMis[k] = remotecall_fetch(setSources,pMis[k].where,pMis[k],newSources);
+#		end
+#	end
+#end
+#return pMis;
+#end
 
 function setSources(pMis::Array{RemoteChannel},newSources)
 @sync begin
