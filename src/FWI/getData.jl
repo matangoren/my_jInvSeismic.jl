@@ -1,3 +1,4 @@
+using CNNHelmholtzSolver
 export getData
 
 function getData(m,pFor::FWIparam,doClear::Bool=false)
@@ -19,12 +20,11 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 
     m = An2cc'*m;
 	gamma = An2cc'*gamma;
+	println("In get data - m size $(size(m)), gamma size $(size(gamma))")
 	
 	println(M.n)
 	println(omega)
 
-	#println("In getData M.n $(M.n.+1)")
-	#println("In getData omega $(omega)")
 	# allocate space for data and fields
 	n_nodes = prod(M.n.+1);
 	# ALL AT ONCE DIRECT CODE
@@ -38,6 +38,9 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 		Ainv.MG.relativeTol *= 1e-4;
 	end
 
+	if isa(Ainv, CnnHelmholtzSolver)
+		Ainv = setMediumParameters(Ainv, m, gamma, omega, M.n)
+	end
 
 	if select==[]
 		Qs = Q*wavelet;
@@ -77,13 +80,12 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
 
+		println("in getdata typeof Ainv $(typeof(Ainv))")
 		@time begin
 			ts = time_ns();
-			println("In getData - before solveLinearSystem")
-			println("H size $(size(H))")
-			println("U size $(size(U))")
-			println("batch size $(batchSize)")
+			println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(batchSize)")
 			U,Ainv = solveLinearSystem(H,U,Ainv,0)
+			println("In getData - after solveLinearSystem")
 			es = time_ns();
 			#println("Runtime of Solve LinSolve: ", (es - ts) / 10e9);
 		end
@@ -114,10 +116,12 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 		end
 	end
 
-	if doClear
-		clear!(pFor);
-	elseif isa(Ainv,ShiftedLaplacianMultigridSolver)
-		clear!(Ainv.MG); 
+	if !isa(Ainv, CnnHelmholtzSolver)
+		if doClear
+			clear!(pFor);
+		elseif isa(Ainv,ShiftedLaplacianMultigridSolver)
+			clear!(Ainv.MG); 
+		end
 	end
     return D,pFor
 end

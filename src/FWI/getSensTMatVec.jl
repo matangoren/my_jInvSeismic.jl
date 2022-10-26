@@ -1,3 +1,4 @@
+import CNNHelmholtzSolver: solveLinearSystem
 export getSensTMatVec
 
 function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)

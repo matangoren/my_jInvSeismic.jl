@@ -72,6 +72,10 @@ batch = min(size(Q,2),maxBatchSize);
 (Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(Minv,omega,Q,P,gamma);
 
 (pFor,contDiv,SourcesSubInd) = getFWIparam(omega,waveCoef,gammas,Qs,Ps,Mfwds,Ainv,workerList,batch,useFilesForFields);
+# Ainv.set over pFor forwardSolver
+println("In prepareFWIDataFiles2 - checking pfor")
+println(typeof(pFor))
+println(size(pFor))
 
 Mesh2MeshRFs = prepareMesh2Mesh(pFor,Minv,false);
 

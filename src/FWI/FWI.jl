@@ -19,7 +19,9 @@ import jInv.ForwardShare.getData
 import jInv.ForwardShare.getSensTMatVec
 import jInv.ForwardShare.getSensMatVec
 import jInv.ForwardShare.prepareMesh2Mesh
-import jInv.LinearSolvers.copySolver
+# import jInv.LinearSolvers.copySolver
+#check if this works
+import CNNHelmholtzSolver.copySolver
 
 import jInv.ForwardShare.ForwardProbType
 

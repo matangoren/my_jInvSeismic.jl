@@ -267,7 +267,8 @@ end
 
 if simSrcDim > 0
 	# set full data back
-	pMisTemp = setSources(pMisTemp,originalSources);
+	# pMisTemp = setSources(pMisTemp,originalSources);
+	pMisTemp = setSources(pMisTemp,orig_sources);
 	pMisTemp = setDobs(pMisTemp,dobs)
 	pMisTemp = setWd(pMisTemp,wd)
 end
@@ -407,7 +408,8 @@ for j = 1:itersNum
 	end
 
 
-	newSources = originalSources * TEmat + Z1 * Z2;
+	# newSources = originalSources * TEmat + Z1 * Z2;
+	newSources = orig_sources * TEmat + Z1 * Z2;
 
 	pMisTemp = setSources(pMisTemp,newSources);
 	pMisTemp = setDobs(pMisTemp,reducedDobs)
@@ -455,7 +457,8 @@ for j = 1:itersNum
 	push!(HIS,His)
 end
 
-pMisTemp = setSources(pMisTemp,originalSources);
+# pMisTemp = setSources(pMisTemp,originalSources);
+pMisTemp = setSources(pMisTemp,orig_sources);
 pMisTemp = setDobs(pMisTemp,mergedDobs)
 pMisTemp = setWd(pMisTemp,mergedWd)
 

@@ -38,7 +38,8 @@ fgmres_func = KrylovMethods.fgmres
 c_type = ComplexF64
 r_type = Float64
 
-n=m=128
+n = 208
+m=104
 h=[1. /n, 1. /m]
 
 blocks = 2

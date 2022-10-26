@@ -10,15 +10,18 @@ using Statistics
 using jInv.InverseSolve
 using jInv.LinearSolvers
 using Multigrid
+using CNNHelmholtzSolver
+using Statistics
+using Flux
 
-#NumWorkers = 1;
-#if nworkers() == 1
-#	addprocs(NumWorkers);
-#elseif nworkers() < NumWorkers
-# 	addprocs(NumWorkers - nworkers());
-#end
+NumWorkers = 4;
+if nworkers() == 1
+	addprocs(NumWorkers);
+elseif nworkers() < NumWorkers
+	addprocs(NumWorkers - nworkers());
+end
 
-#@everywhere begin
+@everywhere begin
 	using jInv.InverseSolve
 	using jInv.LinearSolvers
 	using jInvSeismic.FWI
@@ -28,7 +31,9 @@ using Multigrid
 	using DelimitedFiles
 	using jInv.ForwardShare
 	using KrylovMethods
-#end
+	using CNNHelmholtzSolver
+	using Flux
+end
 
 plotting = true;
 if plotting
@@ -40,6 +45,8 @@ end
 @everywhere FWIDriversPath = "./";
 include(string(FWIDriversPath,"prepareFWIDataFiles.jl"));
 include(string(FWIDriversPath,"setupFWI.jl"));
+# include(string(FWIDriversPath,"../../../src/FWI/FWI.jl"));
+
 
 dataDir 	= pwd();
 resultsDir 	= pwd();
@@ -58,11 +65,11 @@ useFilesForFields = false; # wheter to save fields to files
  jumpSrc = 2;
  jumpRcv = 1;
 #  newSize = [600,300];
- newSize = [352,176];
+ newSize = [192,96]; # newSize[1]+64 and newSize[2]+32 needs to divide by 64
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
-
+println("size of m $(size(m))")
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
 #omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
 omega = [2.0,2.5,3.5,4.5]*2*pi*0.9;
@@ -91,7 +98,8 @@ resultsFilename = string(resultsFilename,".dat");
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
-Ainv = getJuliaSolver();
+# Ainv = getJuliaSolver();
+Ainv = getCnnHelmholtzSolver();
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
@@ -103,138 +111,139 @@ figure(2,figsize = (22,10));
 plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],figTitle="mref",filename="mref.png");
 
 
-#prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
-#									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
+prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
+									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
 
 
-(Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
-	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true);
+# comment for now --- undo
+# (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
+# 	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true);
 
-########################################################################################################
-# Setting up the inversion for slowness instead of velocity:
-########################################################################################################
-function dump(mc,Dc,iter,pInv,PMis,resultsFilename)
-	if iter==0
-		return;
-	end
-	fullMc = slowSquaredToVelocity(reshape(Iact*pInv.modelfun(mc)[1] + sback,tuple((pInv.MInv.n)...)))[1];
-	Temp = splitext(resultsFilename);
-	if iter>0
-		Temp = string(Temp[1],iter,Temp[2]);
-	else
-		Temp = resultsFilename;
-	end
-	if resultsFilename!=""
-		writedlm(Temp,convert(Array{Float16},fullMc));
-	end
-	if plotting
-		figure(888,figsize = (22,10));
-		clf();
-		filename = splitdir(Temp)[2];
-		plotModel(fullMc,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],filename=filename,figTitle=filename);
-	end
-end
+# ########################################################################################################
+# # Setting up the inversion for slowness instead of velocity:
+# ########################################################################################################
+# function dump(mc,Dc,iter,pInv,PMis,resultsFilename)
+# 	if iter==0
+# 		return;
+# 	end
+# 	fullMc = slowSquaredToVelocity(reshape(Iact*pInv.modelfun(mc)[1] + sback,tuple((pInv.MInv.n)...)))[1];
+# 	Temp = splitext(resultsFilename);
+# 	if iter>0
+# 		Temp = string(Temp[1],iter,Temp[2]);
+# 	else
+# 		Temp = resultsFilename;
+# 	end
+# 	if resultsFilename!=""
+# 		writedlm(Temp,convert(Array{Float16},fullMc));
+# 	end
+# 	if plotting
+# 		figure(888,figsize = (22,10));
+# 		clf();
+# 		filename = splitdir(Temp)[2];
+# 		plotModel(fullMc,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],filename=filename,figTitle=filename);
+# 	end
+# end
 
 
-#####################################################################################################
-# Setting up the inversion for velocity:
-#####################################################################################################
-mref 		= velocityToSlowSquared(mref)[1];
-t    		= copy(boundsLow);
-boundsLow 	= velocityToSlowSquared(boundsHigh)[1];
-boundsHigh 	= velocityToSlowSquared(t)[1]; t = 0;
-modfun 		= identityMod;
+# #####################################################################################################
+# # Setting up the inversion for velocity:
+# #####################################################################################################
+# mref 		= velocityToSlowSquared(mref)[1];
+# t    		= copy(boundsLow);
+# boundsLow 	= velocityToSlowSquared(boundsHigh)[1];
+# boundsHigh 	= velocityToSlowSquared(t)[1]; t = 0;
+# modfun 		= identityMod;
 
-########################################################################################################
-# Set up Inversion #################################################################################
-########################################################################################################
+# ########################################################################################################
+# # Set up Inversion #################################################################################
+# ########################################################################################################
 
-flush(Base.stdout)
+# flush(Base.stdout)
 
-GN = "projGN"
-maxStep=0.05*maximum(boundsHigh);
-regparams = [1.0,1.0,1.0,1e-6];
-regfunLow(m,mref,M) 	= wdiffusionReg(m,mref,M,Iact=Iact,C=[]);
-regfunHigh(m,mref,M) 	= wFourthOrderSmoothing(m,mref,M,Iact=Iact,C=[]);
-if dim==2
-	HesPrec=getExactSolveRegularizationPreconditioner();
-else
-	HesPrec = getSSORCGFourthOrderRegularizationPreconditioner(regparams,Minv,Iact,1.0,1e-8,1000);
-end
+# GN = "projGN"
+# maxStep=0.05*maximum(boundsHigh);
+# regparams = [1.0,1.0,1.0,1e-6];
+# regfunLow(m,mref,M) 	= wdiffusionReg(m,mref,M,Iact=Iact,C=[]);
+# regfunHigh(m,mref,M) 	= wFourthOrderSmoothing(m,mref,M,Iact=Iact,C=[]);
+# if dim==2
+# 	HesPrec=getExactSolveRegularizationPreconditioner();
+# else
+# 	HesPrec = getSSORCGFourthOrderRegularizationPreconditioner(regparams,Minv,Iact,1.0,1e-8,1000);
+# end
 
-alpha 	= 1e+2;
-pcgTol 	= 1e-1;
-maxit 	= 1;
+# alpha 	= 1e+2;
+# pcgTol 	= 1e-1;
+# maxit 	= 1;
 
-pInv = getInverseParam(Minv,modfun,regfunHigh,alpha,mref[:],boundsLow,boundsHigh,
-                         maxStep=maxStep,pcgMaxIter=cgit,pcgTol=pcgTol,
-						 minUpdate=1e-3, maxIter = maxit,HesPrec=HesPrec);
-mc = copy(mref[:]);
+# pInv = getInverseParam(Minv,modfun,regfunHigh,alpha,mref[:],boundsLow,boundsHigh,
+#                          maxStep=maxStep,pcgMaxIter=cgit,pcgTol=pcgTol,
+# 						 minUpdate=1e-3, maxIter = maxit,HesPrec=HesPrec);
+# mc = copy(mref[:]);
 
-N_nodes = prod(Minv.n.+1);
-nsrc = size(Q,2);
-p = 16;
-# Z1 = 2e-4*rand(ComplexF64,(N_nodes, p));
-Z1 = 0*rand(ComplexF64,(N_nodes, p));
+# N_nodes = prod(Minv.n.+1);
+# nsrc = size(Q,2);
+# p = 16;
+# # Z1 = 2e-4*rand(ComplexF64,(N_nodes, p));
+# Z1 = 0*rand(ComplexF64,(N_nodes, p));
 
-function saveCheckpoint(resultsFilename,mc,Z1,Z2,alpha1,alpha2,pInv,cyc)
-	file = matopen(string(splitext(resultsFilename)[1],"_Cyc",cyc,"_checkpoint.mat"), "w");
-	write(file,"mc",mc);
-	write(file,"Z1",Z1);
-	write(file,"Z2",Z2);
-	write(file,"alpha1",alpha1);
-	write(file,"alpha2",alpha2);
-	write(file,"alpha",pInv.alpha);
-	write(file,"mref",pInv.mref);
-	close(file);
-	println("****************************************************************************")
-	println("*********************** Saving Checkpoint for cycle ",cyc," ********************")
-	println("****************************************************************************")
-end
+# function saveCheckpoint(resultsFilename,mc,Z1,Z2,alpha1,alpha2,pInv,cyc)
+# 	file = matopen(string(splitext(resultsFilename)[1],"_Cyc",cyc,"_checkpoint.mat"), "w");
+# 	write(file,"mc",mc);
+# 	write(file,"Z1",Z1);
+# 	write(file,"Z2",Z2);
+# 	write(file,"alpha1",alpha1);
+# 	write(file,"alpha2",alpha2);
+# 	write(file,"alpha",pInv.alpha);
+# 	write(file,"mref",pInv.mref);
+# 	close(file);
+# 	println("****************************************************************************")
+# 	println("*********************** Saving Checkpoint for cycle ",cyc," ********************")
+# 	println("****************************************************************************")
+# end
 
-function loadCheckpoint(resultsFilename,cyc)
-	file = matopen(string(splitext(resultsFilename)[1],"_Cyc",cyc,"_checkpoint.mat"), "r");
-	mc = read(file,"mc");
-	Z1 = read(file,"Z1");
-	Z2 = read(file,"Z2");
-	alpha1 = read(file,"alpha1");
-	alpha2 = read(file,"alpha2");
-	alpha = read(file,"alpha");
-	mref = read(file,"mref");
-	close(file);
-	return mc,Z1,Z2,alpha1,alpha2,alpha,mref
-end
+# function loadCheckpoint(resultsFilename,cyc)
+# 	file = matopen(string(splitext(resultsFilename)[1],"_Cyc",cyc,"_checkpoint.mat"), "r");
+# 	mc = read(file,"mc");
+# 	Z1 = read(file,"Z1");
+# 	Z2 = read(file,"Z2");
+# 	alpha1 = read(file,"alpha1");
+# 	alpha2 = read(file,"alpha2");
+# 	alpha = read(file,"alpha");
+# 	mref = read(file,"mref");
+# 	close(file);
+# 	return mc,Z1,Z2,alpha1,alpha2,alpha,mref
+# end
 
-if norm(Z1) == 0.0
-	# Standard FWI run
-	println("Standard FWI run with sim sources dim = ",simSrcDim);
-	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
-			windowSize, resultsFilename,dump,Iact,sback,
-			simSrcDim = simSrcDim);
-else
-	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
-			windowSize, resultsFilename,dump,Iact,sback, Z1=Z1, alpha1=alpha1,
-			alpha2Orig=alpha2, stepReg=stepReg,
-			simSrcDim = simSrcDim, FWImethod="FWI_ES");
-end
+# if norm(Z1) == 0.0
+# 	# Standard FWI run
+# 	println("Standard FWI run with sim sources dim = ",simSrcDim);
+# 	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
+# 			windowSize, resultsFilename,dump,Iact,sback,
+# 			simSrcDim = simSrcDim);
+# else
+# 	freqContParams = getFreqContParams(mc, 0,size(P,2), pInv, pMis,
+# 			windowSize, resultsFilename,dump,Iact,sback, Z1=Z1, alpha1=alpha1,
+# 			alpha2Orig=alpha2, stepReg=stepReg,
+# 			simSrcDim = simSrcDim, FWImethod="FWI_ES");
+# end
 
-for i = 1:freqContSweeps
-	freqContParams.cycle = i - 1;
-	freqContParams.itersNum = GNiters[i];
-	freqContParams.startFrom = freqRanges[i][1];
-	freqContParams.endAt = freqRanges[i][2];
-	if i > EScycles
-		freqContParams.FWImethod = "FWI";
-	end
-	if regularizations[i] == "low"
-		freqContParams.pInv.regularizer = regfunLow;
-		freqContParams.updateMref = true;
-		freqContParams.pInv.pcgMaxIter = 5;
-	else
-		freqContParams.pInv.regularizer = regfunHigh;
-		freqContParams.updateMref = false;
-		freqContParams.pInv.pcgMaxIter = 7;
-	end
-	global mc, = freqCont(freqContParams);
-	freqContParams.mc = mc;
-end
+# for i = 1:freqContSweeps
+# 	freqContParams.cycle = i - 1;
+# 	freqContParams.itersNum = GNiters[i];
+# 	freqContParams.startFrom = freqRanges[i][1];
+# 	freqContParams.endAt = freqRanges[i][2];
+# 	if i > EScycles
+# 		freqContParams.FWImethod = "FWI";
+# 	end
+# 	if regularizations[i] == "low"
+# 		freqContParams.pInv.regularizer = regfunLow;
+# 		freqContParams.updateMref = true;
+# 		freqContParams.pInv.pcgMaxIter = 5;
+# 	else
+# 		freqContParams.pInv.regularizer = regfunHigh;
+# 		freqContParams.updateMref = false;
+# 		freqContParams.pInv.pcgMaxIter = 7;
+# 	end
+# 	global mc, = freqCont(freqContParams);
+# 	freqContParams.mc = mc;
+# end
