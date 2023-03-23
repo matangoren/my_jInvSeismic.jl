@@ -14,12 +14,12 @@ using CNNHelmholtzSolver
 using Statistics
 using Flux
 
-NumWorkers = 4;
-if nworkers() == 1
-	addprocs(NumWorkers);
-elseif nworkers() < NumWorkers
-	addprocs(NumWorkers - nworkers());
-end
+# NumWorkers = 4;
+# if nworkers() == 1
+# 	addprocs(NumWorkers);
+# elseif nworkers() < NumWorkers
+# 	addprocs(NumWorkers - nworkers());
+# end
 
 @everywhere begin
 	using jInv.InverseSolve
@@ -31,7 +31,7 @@ end
 	using DelimitedFiles
 	using jInv.ForwardShare
 	using KrylovMethods
-	using CNNHelmholtzSolver
+	# using CNNHelmholtzSolver
 	using Flux
 end
 
@@ -55,24 +55,26 @@ modelDir 	= pwd();
 ########################################################################################################
 windowSize = 4; # frequency continuation window size
 simSrcDim = 16; # change to 0 for no simultaneous sources
-maxBatchSize = 256; # use smaller value for 3D
+maxBatchSize = 8; #256; # use smaller value for 3D
 useFilesForFields = false; # wheter to save fields to files
 
 
 ########## uncomment block for SEG ###############
  dim     = 2;
- pad     = 32; 
+ pad     = 16; 
  jumpSrc = 2;
  jumpRcv = 1;
 #  newSize = [600,300];
- newSize = [192,96]; # newSize[1]+64 and newSize[2]+32 needs to divide by 64
+#  newSize = [288,176]; # newSize[1]+2*pad and newSize[2]+pad needs to divide by 64
+newSize = [352,240]
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 println("size of m $(size(m))")
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
 #omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
-omega = [2.0,2.5,3.5,4.5]*2*pi*0.9;
+# omega = [2.0,2.5,3.5,4.5]*2*pi;
+omega = [3.9]*2*pi;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
@@ -98,7 +100,7 @@ resultsFilename = string(resultsFilename,".dat");
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
-# Ainv = getJuliaSolver();
+# Ainv = getJuliaSolver()
 Ainv = getCnnHelmholtzSolver();
 
 workersFWI = workers();

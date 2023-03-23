@@ -59,6 +59,9 @@ println("We have ",size(Q,2)," sources");
 # compute observed data
 
 ABLamp = getMaximalFrequency(1.0./(minimum(m).^2),Minv);
+println("############################### ABLamp = $(ABLamp)")
+println("############################### ABLpad = $(ABLpa)")
+# gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
 gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
 attenuation = 0.01*4*pi;
 gamma .+= attenuation; # adding Attenuation.

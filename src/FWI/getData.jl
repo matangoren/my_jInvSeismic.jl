@@ -20,8 +20,8 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 
     m = An2cc'*m;
 	gamma = An2cc'*gamma;
-	println("In get data - m size $(size(m)), gamma size $(size(gamma))")
 	
+	println("### In getData ###")
 	println(M.n)
 	println(omega)
 
@@ -39,7 +39,8 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 	end
 
 	if isa(Ainv, CnnHelmholtzSolver)
-		Ainv = setMediumParameters(Ainv, m, gamma, omega, M.n)
+		Helmholtz_param = HelmholtzParam(M,gamma,m,omega,true,useSommerfeldBC)
+		Ainv = setMediumParameters(Ainv, Helmholtz_param)
 	end
 
 	if select==[]
@@ -80,14 +81,26 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
 
-		println("in getdata typeof Ainv $(typeof(Ainv))")
 		@time begin
-			ts = time_ns();
 			println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(batchSize)")
-			U,Ainv = solveLinearSystem(H,U,Ainv,0)
-			println("In getData - after solveLinearSystem")
-			es = time_ns();
-			#println("Runtime of Solve LinSolve: ", (es - ts) / 10e9);
+			ts_ju = time_ns();
+			println("JU solver")
+			U_ju,Ainv = solveLinearSystem(H,U,Ainv,0)
+			es_ju = time_ns();
+			println("Runtime of Solve LinSolve - JU: ", (es_ju - ts_ju) / 1e9);
+			Ainv = setSolverType(Dict("before_jacobi"=>false, "unet"=>true, "after_jacobi"=>false, "after_vcycle"=>true), Ainv)
+			ts_vu = time_ns();
+			println("VU solver")
+			U_vu,Ainv = solveLinearSystem(H,U,Ainv,0)
+			es_vu = time_ns();
+			println("Runtime of Solve LinSolve - VU: ", (es_vu - ts_vu) / 1e9);
+			Ainv = setSolverType(Dict("before_jacobi"=>false, "unet"=>false, "after_jacobi"=>false, "after_vcycle"=>true), Ainv)
+			ts_v = time_ns();
+			println("V-cycle solver")
+			U_v,Ainv = solveLinearSystem(H,U,Ainv,0)
+			es_v = time_ns();
+			println("Runtime of Solve LinSolve - V-cycle: ", (es_v - ts_v) / 1e9);
+			U = U_ju
 		end
 
 		Ainv.doClear = 0;
@@ -123,5 +136,10 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 			clear!(Ainv.MG); 
 		end
 	end
+	# if doClear
+	# 	clear!(pFor);
+	# elseif isa(Ainv,ShiftedLaplacianMultigridSolver)
+	# 	clear!(Ainv.MG); 
+	# end
     return D,pFor
 end

@@ -29,6 +29,7 @@ end
 	using jInv.ForwardShare
 	using KrylovMethods
 	using CNNHelmholtzSolver
+	using Flux
 end
 
 plotting = true;
@@ -41,6 +42,7 @@ end
 @everywhere FWIDriversPath = "./";
 include(string(FWIDriversPath,"prepareFWIDataFiles.jl"));
 include(string(FWIDriversPath,"setupFWI.jl"));
+# include("../../../src/FWI/adaptedMeshes.jl")
 
 dataDir 	= pwd();
 resultsDir 	= pwd();
@@ -90,8 +92,8 @@ resultsFilename = string(resultsFilename,".dat");
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
-Ainv = getJuliaSolver();
-# Ainv = getCnnHelmholyzSolver() # need to pass parameters - 
+# Ainv = getJuliaSolver();
+Ainv = getCnnHelmholtzSolver() # need to pass parameters - 
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
