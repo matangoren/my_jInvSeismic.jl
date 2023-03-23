@@ -14,7 +14,7 @@ writeSrcRcvLocFile(SRCfile,Minv,ABLpad,jumpSrc);
 writeSrcRcvLocFile(RCVfile,Minv,ABLpad,jumpRcv);
 
 dataFullFilenamePrefix = string(filenamePrefix,"_freq");
-gamma = prepareFWIDataFiles2(m, Minv, filenamePrefix,dataFullFilenamePrefix,omega,waveCoef,pad,ABLpad,offset,workerList,maxBatchSize,Ainv,useFilesForFields);
+gamma = prepareFWIDataFiles2(m, mref, Minv, filenamePrefix,dataFullFilenamePrefix,omega,waveCoef,pad,ABLpad,offset,workerList,maxBatchSize,Ainv,useFilesForFields);
 
 HO = false;
 if calcTravelTime
@@ -39,7 +39,7 @@ close(file);
 end
 
 
-function prepareFWIDataFiles2(m, Minv::RegularMesh, filenamePrefix::String,dataFullFilenamePrefix::String, omega::Array{Float64,1},
+function prepareFWIDataFiles2(m,mref, Minv::RegularMesh, filenamePrefix::String,dataFullFilenamePrefix::String, omega::Array{Float64,1},
 								waveCoef::Array{ComplexF64,1}, pad::Int64,ABLpad::Int64,offset::Int64,workerList::Array{Int64,1},maxBatchSize::Int64,
 								Ainv::AbstractSolver,useFilesForFields::Bool = false)
 ########################## m is in Velocity here. ###################################
@@ -58,11 +58,13 @@ Q = Q.*1.0./(norm(Minv.h)^2);
 println("We have ",size(Q,2)," sources");
 # compute observed data
 
-ABLamp = getMaximalFrequency(1.0./(minimum(m).^2),Minv);
+# ABLamp = getMaximalFrequency(1.0./(minimum(m).^2),Minv);
+ABLamp = getMaximalFrequency(1.0./(minimum(mref).^2),Minv);
+println("############################### Minv.h = $(Minv.h)")
 println("############################### ABLamp = $(ABLamp)")
-println("############################### ABLpad = $(ABLpa)")
+println("############################### ABLpad = $(ABLpad)")
 # gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
-gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
+gamma = getABL(Minv.n,false,ones(Int64,Minv.dim)*ABLpad,ABLamp);
 attenuation = 0.01*4*pi;
 gamma .+= attenuation; # adding Attenuation.
 
@@ -79,10 +81,11 @@ batch = min(size(Q,2),maxBatchSize);
 println("In prepareFWIDataFiles2 - checking pfor")
 println(typeof(pFor))
 println(size(pFor))
-
+println(maximum(mref))
 Mesh2MeshRFs = prepareMesh2Mesh(pFor,Minv,false);
 
-(D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,Mesh2MeshRFs,true);
+# (D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,Mesh2MeshRFs,true);
+(D,pFor) = getData(velocityToSlowSquared(mref[:])[1],pFor,Mesh2MeshRFs,true);
 
 nsrc = size(Q,2);
 nrcv = size(P,2);

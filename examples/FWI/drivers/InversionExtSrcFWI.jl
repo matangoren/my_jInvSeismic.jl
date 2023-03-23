@@ -71,6 +71,7 @@ newSize = [352,240]
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 println("size of m $(size(m))")
+println("maximum of mref $(maximum(mref))")
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
 #omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
 # omega = [2.0,2.5,3.5,4.5]*2*pi;
