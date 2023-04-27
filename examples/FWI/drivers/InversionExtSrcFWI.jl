@@ -14,6 +14,13 @@ using CNNHelmholtzSolver
 using Statistics
 using Flux
 
+using_gpu = true
+
+if using_gpu == true
+	using CUDA
+	CUDA.allowscalar(true)
+end
+
 # NumWorkers = 4;
 # if nworkers() == 1
 # 	addprocs(NumWorkers);
@@ -55,7 +62,7 @@ modelDir 	= pwd();
 ########################################################################################################
 windowSize = 4; # frequency continuation window size
 simSrcDim = 16; # change to 0 for no simultaneous sources
-maxBatchSize = 8; #256; # use smaller value for 3D
+maxBatchSize = 16; #256; # use smaller value for 3D
 useFilesForFields = false; # wheter to save fields to files
 
 
@@ -75,7 +82,7 @@ println("maximum of mref $(maximum(mref))")
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
 #omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
 # omega = [2.0,2.5,3.5,4.5]*2*pi;
-omega = [3.9]*2*pi;
+omega = [3.8]*2*pi;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
@@ -102,7 +109,7 @@ println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
 # Ainv = getJuliaSolver()
-Ainv = getCnnHelmholtzSolver();
+Ainv = getCnnHelmholtzSolver("JU");
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));

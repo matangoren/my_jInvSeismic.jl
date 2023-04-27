@@ -31,7 +31,7 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
     nrec  		= size(P,2)
     nsrc  		= size(Q,2)
 
-	An2cc = getNodalAverageMatrix(M);
+	An2cc = getNodalAverageMatrix(M; avN2C=avN2C_Nearest);
 
 	println("########### In getData minimum m $(minimum(m)) size of m $(size(m))")
     m = An2cc'*m;
@@ -98,27 +98,27 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 		else
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
-		U = get_rhs(M.n[1], M.n[2], M.h; blocks=8) # check point source
+		U = get_rhs(M.n[1], M.n[2], M.h; blocks=16) # check point source
 		println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(batchSize)")
 		@time begin
 			ts_ju = time_ns();
 			println("JU solver")
-			Ainv = setSolverType(Dict("before_jacobi"=>true, "unet"=>true, "after_jacobi"=>true, "after_vcycle"=>false), Ainv)
+			# Ainv = setSolverType("JU", Ainv)
 			U_ju,Ainv = solveLinearSystem(H,U,Ainv,0)
 			es_ju = time_ns();
-			println("Runtime of Solve LinSolve - JU: ", (es_ju - ts_ju) / 1e9);
-			Ainv = setSolverType(Dict("before_jacobi"=>false, "unet"=>true, "after_jacobi"=>false, "after_vcycle"=>true), Ainv)
-			ts_vu = time_ns();
-			println("VU solver")
-			U_vu,Ainv = solveLinearSystem(H,U,Ainv,0)
-			es_vu = time_ns();
-			println("Runtime of Solve LinSolve - VU: ", (es_vu - ts_vu) / 1e9);
-			Ainv = setSolverType(Dict("before_jacobi"=>false, "unet"=>false, "after_jacobi"=>false, "after_vcycle"=>true), Ainv)
-			ts_v = time_ns();
-			println("V-cycle solver")
-			U_v,Ainv = solveLinearSystem(H,U,Ainv,0)
-			es_v = time_ns();
-			println("Runtime of Solve LinSolve - V-cycle: ", (es_v - ts_v) / 1e9);
+			# println("Runtime of Solve LinSolve - JU: ", (es_ju - ts_ju) / 1e9);
+			# Ainv = setSolverType("VU", Ainv)
+			# ts_vu = time_ns();
+			# println("VU solver")
+			# U_vu,Ainv = solveLinearSystem(H,U,Ainv,0)
+			# es_vu = time_ns();
+			# println("Runtime of Solve LinSolve - VU: ", (es_vu - ts_vu) / 1e9);
+			# Ainv = setSolverType("V", Ainv)
+			# ts_v = time_ns();
+			# println("V-cycle solver")
+			# U_v,Ainv = solveLinearSystem(H,U,Ainv,0)
+			# es_v = time_ns();
+			# println("Runtime of Solve LinSolve - V-cycle: ", (es_v - ts_v) / 1e9);
 			U = U_ju
 		end
 

@@ -63,8 +63,8 @@ ABLamp = getMaximalFrequency(1.0./(minimum(mref).^2),Minv);
 println("############################### Minv.h = $(Minv.h)")
 println("############################### ABLamp = $(ABLamp)")
 println("############################### ABLpad = $(ABLpad)")
-# gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
-gamma = getABL(Minv.n,false,ones(Int64,Minv.dim)*ABLpad,ABLamp);
+gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
+# gamma = getABL(Minv.n,false,ones(Int64,Minv.dim)*ABLpad,ABLamp);
 attenuation = 0.01*4*pi;
 gamma .+= attenuation; # adding Attenuation.
 
