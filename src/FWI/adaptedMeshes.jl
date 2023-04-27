@@ -8,7 +8,7 @@ Ps = Array{SparseMatrixCSC}(undef,nfreqs);
 gammas = Array{Vector{Float64}}(undef,nfreqs);
 Mfwds = Array{RegularMesh}(undef,nfreqs);
 
-MakeSureDividesIn = 8;
+MakeSureDividesIn = 16; # needed for the CNNHelmholtzSolver
 roundToNearestDivisable = (x::Array) -> (floor.(Int64,(x.-1)/MakeSureDividesIn.+1)*MakeSureDividesIn)
 
 for k = 1:nfreqs
