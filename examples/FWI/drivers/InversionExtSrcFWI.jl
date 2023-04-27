@@ -82,7 +82,7 @@ println("maximum of mref $(maximum(mref))")
 # omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
 #omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
 # omega = [2.0,2.5,3.5,4.5]*2*pi;
-omega = [3.8]*2*pi;
+omega = [3.9]*2*pi;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
