@@ -93,7 +93,7 @@ println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
 # Ainv = getJuliaSolver();
-Ainv = getCnnHelmholtzSolver() # need to pass parameters - 
+Ainv = getCnnHelmholtzSolver("JU") # need to pass parameters - 
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));

@@ -71,17 +71,14 @@ useFilesForFields = false; # wheter to save fields to files
  pad     = 16; 
  jumpSrc = 2;
  jumpRcv = 1;
-#  newSize = [600,300];
-#  newSize = [288,176]; # newSize[1]+2*pad and newSize[2]+pad needs to divide by 64
-newSize = [352,240]
+
+newSize = [352,240] # newSize[1]+2*pad and newSize[2]+pad needs to divide by 64
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 println("size of m $(size(m))")
 println("maximum of mref $(maximum(mref))")
-# omega = [3.0,3.3,3.6,3.9,4.2,4.5,5.0,5.5,6.5]*2*pi;
-#omega = [3.0,3.3,3.6,3.9,4.2]*2*pi;
-# omega = [2.0,2.5,3.5,4.5]*2*pi;
+
 omega = [3.9]*2*pi;
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
@@ -109,7 +106,7 @@ println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.
 ABLpad = pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
 # Ainv = getJuliaSolver()
-Ainv = getCnnHelmholtzSolver("JU");
+Ainv = getCnnHelmholtzSolver("VU");
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
@@ -125,7 +122,7 @@ prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,on
 									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
 
 
-# comment for now --- undo
+# comment for now
 # (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
 # 	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true);
 

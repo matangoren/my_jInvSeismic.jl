@@ -68,7 +68,7 @@ gamma = gamma_val*2*pi * ones(r_type,size(kappa))
 gamma = r_type.(absorbing_layer!(gamma, pad_cells, omega))
 
 
-solver = getCnnHelmholtzSolver(;n=n,m=m,kappa=kappa, gamma=gamma, omega=omega)
+solver = getCnnHelmholtzSolver("JU";n=n,m=m,kappa=kappa, gamma=gamma, omega=omega)
 
 result = solveLinearSystem(sparse(ones(size(r_vcycle))), r_vcycle, solver)
 

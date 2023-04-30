@@ -3,19 +3,20 @@ export getData
 
 function get_rhs(n, m, h; blocks=2)
 	r_type = Float32
-	c_type = FieldsType
-    rhs = zeros(c_type,n+1,m+1,1,1)
+    rhs = zeros(ComplexF64,n+1,m+1,1,1)
     rhs[floor(Int32,n / 2.0),floor(Int32,m / 2.0),1,1] = r_type(1.0 ./minimum(h)^2)
     rhs = vec(rhs)
+    if blocks == 1
+        return reshape(rhs, (length(rhs),1))
+    
+    end
     for i = 2:blocks
-        rhs1 = zeros(c_type,n+1,m+1,1,1)
+        rhs1 = zeros(ComplexF64,n+1,m+1,1,1)
         rhs1[floor(Int32,(n / blocks)*(i-1)),floor(Int32,(m / blocks)*(i-1)),1,1] = r_type(1.0 ./minimum(h)^2)
         rhs = cat(rhs, vec(rhs1), dims=2)
     end
-
     return rhs
 end
-
 function getData(m,pFor::FWIparam,doClear::Bool=false)
     # extract pointers
     M       	= pFor.Mesh
@@ -98,28 +99,10 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 		else
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
-		U = get_rhs(M.n[1], M.n[2], M.h; blocks=16) # check point source
-		println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(batchSize)")
+		U = get_rhs(M.n[1], M.n[2], M.h; blocks=length(batchIdxs)) # check point source
+		println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(length(batchIdxs))")
 		@time begin
-			ts_ju = time_ns();
-			println("JU solver")
-			# Ainv = setSolverType("JU", Ainv)
-			U_ju,Ainv = solveLinearSystem(H,U,Ainv,0)
-			es_ju = time_ns();
-			# println("Runtime of Solve LinSolve - JU: ", (es_ju - ts_ju) / 1e9);
-			# Ainv = setSolverType("VU", Ainv)
-			# ts_vu = time_ns();
-			# println("VU solver")
-			# U_vu,Ainv = solveLinearSystem(H,U,Ainv,0)
-			# es_vu = time_ns();
-			# println("Runtime of Solve LinSolve - VU: ", (es_vu - ts_vu) / 1e9);
-			# Ainv = setSolverType("V", Ainv)
-			# ts_v = time_ns();
-			# println("V-cycle solver")
-			# U_v,Ainv = solveLinearSystem(H,U,Ainv,0)
-			# es_v = time_ns();
-			# println("Runtime of Solve LinSolve - V-cycle: ", (es_v - ts_v) / 1e9);
-			U = U_ju
+			U,Ainv = solveLinearSystem(H,U,Ainv,0)
 		end
 
 		Ainv.doClear = 0;

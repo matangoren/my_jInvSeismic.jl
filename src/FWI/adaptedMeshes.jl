@@ -16,7 +16,7 @@ for k = 1:nfreqs
 	ratio = omega_k/omega_max;
 	if ratio < 0.95
 		Minv_nodal = getRegularMesh(Minv.domain,Minv.n.+1);
-		roundToNearestDivisable
+		# roundToNearestDivisable
 		Mfwd = getRegularMesh(Minv.domain,roundToNearestDivisable(Minv.n.*ratio));
 		Mfwd_nodal = getRegularMesh(Minv.domain,Mfwd.n.+1);
 		Interp = prepareMesh2Mesh(Mfwd, Minv,false);

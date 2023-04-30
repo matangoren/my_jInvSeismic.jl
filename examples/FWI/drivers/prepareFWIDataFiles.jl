@@ -64,7 +64,6 @@ println("############################### Minv.h = $(Minv.h)")
 println("############################### ABLamp = $(ABLamp)")
 println("############################### ABLpad = $(ABLpad)")
 gamma = getABL(Minv.n,true,ones(Int64,Minv.dim)*ABLpad,ABLamp);
-# gamma = getABL(Minv.n,false,ones(Int64,Minv.dim)*ABLpad,ABLamp);
 attenuation = 0.01*4*pi;
 gamma .+= attenuation; # adding Attenuation.
 
@@ -77,6 +76,7 @@ batch = min(size(Q,2),maxBatchSize);
 (Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(Minv,omega,Q,P,gamma);
 
 (pFor,contDiv,SourcesSubInd) = getFWIparam(omega,waveCoef,gammas,Qs,Ps,Mfwds,Ainv,workerList,batch,useFilesForFields);
+
 # Ainv.set over pFor forwardSolver
 println("In prepareFWIDataFiles2 - checking pfor")
 println(typeof(pFor))
