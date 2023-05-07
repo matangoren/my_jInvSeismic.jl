@@ -1,3 +1,8 @@
+name = "jInvSeismic"
+uuid = "9a705e90-610f-11e9-2434-3b0eb5f83adc"
+authors = ["Eran Treister <erantreister@gmail.com>"]
+version = "0.3.1"
+
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 CNNHelmholtzSolver = "14f1de96-abf7-4b99-a738-965cb88e7617"
@@ -25,5 +30,4 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 jInv = "3dacf901-f8cd-5544-86ed-7a705f85c244"
-jInvSeismic = "9a705e90-610f-11e9-2434-3b0eb5f83adc"
 jInvVisPyPlot = "505aa222-9490-414a-a655-3af9297e14ce"
