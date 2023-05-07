@@ -58,8 +58,8 @@ Q = Q.*1.0./(norm(Minv.h)^2);
 println("We have ",size(Q,2)," sources");
 # compute observed data
 
-# ABLamp = getMaximalFrequency(1.0./(minimum(m).^2),Minv);
-ABLamp = getMaximalFrequency(1.0./(minimum(mref).^2),Minv);
+ABLamp = getMaximalFrequency(1.0./(minimum(m).^2),Minv);
+# ABLamp = getMaximalFrequency(1.0./(minimum(mref).^2),Minv);
 println("############################### Minv.h = $(Minv.h)")
 println("############################### ABLamp = $(ABLamp)")
 println("############################### ABLpad = $(ABLpad)")
@@ -84,8 +84,8 @@ println(size(pFor))
 println(maximum(mref))
 Mesh2MeshRFs = prepareMesh2Mesh(pFor,Minv,false);
 
-# (D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,Mesh2MeshRFs,true);
-(D,pFor) = getData(velocityToSlowSquared(mref[:])[1],pFor,Mesh2MeshRFs,true);
+(D,pFor) = getData(velocityToSlowSquared(m[:])[1],pFor,Mesh2MeshRFs,true);
+# (D,pFor) = getData(velocityToSlowSquared(mref[:])[1],pFor,Mesh2MeshRFs,true);
 
 nsrc = size(Q,2);
 nrcv = size(P,2);

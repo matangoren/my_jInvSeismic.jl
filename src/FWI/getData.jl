@@ -1,8 +1,8 @@
 using CNNHelmholtzSolver
 export getData
+r_type = Float32
 
 function get_rhs(n, m, h; blocks=2)
-	r_type = Float32
     rhs = zeros(ComplexF64,n+1,m+1,1,1)
     rhs[floor(Int32,n / 2.0),floor(Int32,m / 2.0),1,1] = r_type(1.0 ./minimum(h)^2)
     rhs = vec(rhs)
@@ -17,6 +17,7 @@ function get_rhs(n, m, h; blocks=2)
     end
     return rhs
 end
+
 function getData(m,pFor::FWIparam,doClear::Bool=false)
     # extract pointers
     M       	= pFor.Mesh
@@ -100,7 +101,7 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
 		U = get_rhs(M.n[1], M.n[2], M.h; blocks=length(batchIdxs)) # check point source
-		println("In getData - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(length(batchIdxs))")
+		println("In getData NEW - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(length(batchIdxs))")
 		@time begin
 			U,Ainv = solveLinearSystem(H,U,Ainv,0)
 		end

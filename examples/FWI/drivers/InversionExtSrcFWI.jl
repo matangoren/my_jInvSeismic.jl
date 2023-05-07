@@ -62,7 +62,7 @@ modelDir 	= pwd();
 ########################################################################################################
 windowSize = 4; # frequency continuation window size
 simSrcDim = 16; # change to 0 for no simultaneous sources
-maxBatchSize = 16; #256; # use smaller value for 3D
+maxBatchSize = 8; #256; # use smaller value for 3D
 useFilesForFields = false; # wheter to save fields to files
 
 
@@ -116,7 +116,6 @@ plotModel(m,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],fi
 
 figure(2,figsize = (22,10));
 plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],figTitle="mref",filename="mref.png");
-
 
 prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
 									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
