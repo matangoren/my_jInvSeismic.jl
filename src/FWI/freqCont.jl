@@ -230,6 +230,7 @@ else
 end
 
 if simSrcDim > 0
+	# print size(reducedSources), size(orig_sources)
 	reducedSources = map(x-> x*TEmat, orig_sources);
 	reducedDobs = map(x-> x*TEmat, dobs);
 	sizeWD = size(reducedDobs[1])
@@ -525,6 +526,17 @@ for freqIdx = startFrom:endAt
 	currentProblems = reqIdx1:reqIdx2;
 	pMisTemp = pMis[currentProblems];
 	println("\n======= New Continuation Stage: selecting continuation batches: ",reqIdx1," to ",reqIdx2,"=======\n");
+	
+	pMisTempFetched = map(fetch, pMisTemp);
+	for cur_pMis in pMisTempFetched
+		cur_pMis.pFor.ForwardSolver.cycle = cycle
+		cur_pMis.pFor.ForwardSolver.freqIndex = freqIdx
+	end
+
+	println("===== BEFORE GN TYPES =====")
+	println("typeof pMis end = $(typeof(pMisTemp[end]))")
+	println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
+	
 	if FWImethod == "FWI"
 		pInv.maxIter = itersNum;
 		mc,Dc,flag,HIS = standardGNrun(method, mc, simSrcDim,
@@ -536,7 +548,24 @@ for freqIdx = startFrom:endAt
 				Z1,alpha1, alpha2, stepReg, pInv, pMisTemp, HIS,
 				resultsFilename, cycle, freqIdx, dumpFun)
 	end
+	# retrain here
+	# println("===== AFTER GN TYPES =====")
+	# println("typeof pMis end = $(typeof(pMisTemp[end]))")
+	# println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
+	
+	# pMisTemp_maxOmega = pMisTempFetched[end]
+	# println(typeof(pMisTemp_maxOmega))
+	# println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
+	# pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=5, initial_set_size=64, lr=1e-6)
 
+	# # pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
+	# pMisFetched = map(fetch, pMis);
+
+	# for cur_pMisFetched in pMisFetched
+	# 	# update current solvers' model
+	# 	cur_pMisFetched.pFor.ForwardSolver.model = pMisTemp_maxOmega.pFor.ForwardSolver.model
+	# end
+	
 end
 
 pInv.regularizer = regfun;

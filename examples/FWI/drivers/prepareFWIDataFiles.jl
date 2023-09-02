@@ -14,7 +14,7 @@ writeSrcRcvLocFile(SRCfile,Minv,ABLpad,jumpSrc);
 writeSrcRcvLocFile(RCVfile,Minv,ABLpad,jumpRcv);
 
 dataFullFilenamePrefix = string(filenamePrefix,"_freq");
-gamma = prepareFWIDataFiles2(m, mref, Minv, filenamePrefix,dataFullFilenamePrefix,omega,waveCoef,pad,ABLpad,offset,workerList,maxBatchSize,Ainv,useFilesForFields);
+gamma, Mfwds_MaxOmega, mrefTemp, gamma_MaxOmega = prepareFWIDataFiles2(m, mref, Minv, filenamePrefix,dataFullFilenamePrefix,omega,waveCoef,pad,ABLpad,offset,workerList,maxBatchSize,Ainv,useFilesForFields);
 
 HO = false;
 if calcTravelTime
@@ -36,6 +36,8 @@ if calcTravelTime
 	write(file,"HO",HO);
 end
 close(file);
+
+return Mfwds_MaxOmega, mrefTemp, gamma_MaxOmega
 end
 
 
@@ -106,7 +108,7 @@ for k = 1:length(omega)
 	filename = string(dataFullFilenamePrefix,omRound,".dat");
 	writeDataFile(filename,Dobsk,Wd_k,srcNodeMap,rcvNodeMap);
 end
-return gamma;
+return gamma, Mfwds[end], interpGlobalToLocal(mref[:],fetch(Mesh2MeshRFs[end])), gammas[end];
 end
 
 

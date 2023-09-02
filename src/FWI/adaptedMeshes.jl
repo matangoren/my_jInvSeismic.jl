@@ -9,15 +9,25 @@ gammas = Array{Vector{Float64}}(undef,nfreqs);
 Mfwds = Array{RegularMesh}(undef,nfreqs);
 
 MakeSureDividesIn = 16; # needed for the CNNHelmholtzSolver
-roundToNearestDivisable = (x::Array) -> (floor.(Int64,(x.-1)/MakeSureDividesIn.+1)*MakeSureDividesIn)
+roundToNearestDivisable = (x::Array) -> (floor.(Int64,(x.-1)/MakeSureDividesIn.+0.5)*MakeSureDividesIn)
+# # roundToNearestDivisable = (x::Array, ratio) -> (floor.(Int64,(((x - [64,32]).-1)*ratio)/MakeSureDividesIn.+0.5)*MakeSureDividesIn + [64,32])
+# function roundToNearestDivisable(largeAxis::Int64, ratio)
+# 	x1 = round.(Int64,((largeAxis-1)*ratio)/MakeSureDividesIn+0.5)*MakeSureDividesIn
+# 	x2 = ceil(Int64,x1/2)
+# 	return [x1,x2] 
+# end
 
 for k = 1:nfreqs
 	omega_k = omega[k];
 	ratio = omega_k/omega_max;
 	if ratio < 0.95
 		Minv_nodal = getRegularMesh(Minv.domain,Minv.n.+1);
+		Minv_nodal.h = Minv.h ./ ratio
 		# roundToNearestDivisable
-		Mfwd = getRegularMesh(Minv.domain,roundToNearestDivisable(Minv.n.*ratio));
+		Mfwd = getRegularMesh(Minv.domain,roundToNearestDivisable(Minv.n*ratio));
+		Mfwd.h = Minv.h ./ ratio
+		println("===== In MeshAdapted $(roundToNearestDivisable(Minv.n*ratio)) =====")
+		println("===== In MeshAdapted $(Mfwd.h) --- $(Minv.h) =====")
 		Mfwd_nodal = getRegularMesh(Minv.domain,Mfwd.n.+1);
 		Interp = prepareMesh2Mesh(Mfwd, Minv,false);
 		Interp_nodal = prepareMesh2Mesh(Mfwd_nodal, Minv_nodal,false);

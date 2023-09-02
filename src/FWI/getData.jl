@@ -1,22 +1,6 @@
-using CNNHelmholtzSolver
+using jInv.LinearSolvers
 export getData
-r_type = Float32
 
-function get_rhs(n, m, h; blocks=2)
-    rhs = zeros(ComplexF64,n+1,m+1,1,1)
-    rhs[floor(Int32,n / 2.0),floor(Int32,m / 2.0),1,1] = r_type(1.0 ./minimum(h)^2)
-    rhs = vec(rhs)
-    if blocks == 1
-        return reshape(rhs, (length(rhs),1))
-    
-    end
-    for i = 2:blocks
-        rhs1 = zeros(ComplexF64,n+1,m+1,1,1)
-        rhs1[floor(Int32,(n / blocks)*(i-1)),floor(Int32,(m / blocks)*(i-1)),1,1] = r_type(1.0 ./minimum(h)^2)
-        rhs = cat(rhs, vec(rhs1), dims=2)
-    end
-    return rhs
-end
 
 function getData(m,pFor::FWIparam,doClear::Bool=false)
     # extract pointers
@@ -41,16 +25,14 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 	println("########### In getData minimum m $(minimum(m)) size of m $(size(m))")
 
 	println("### In getData ###")
-	println(M.n)
-	println(omega)
 
 	# allocate space for data and fields
 	n_nodes = prod(M.n.+1);
 	# ALL AT ONCE DIRECT CODE
-	H = GetHelmholtzOperator(M,m,omega, gamma, true,useSommerfeldBC);
+	H = GetHelmholtzOperator(M,m,omega, gamma, true,useSommerfeldBC,useOrderNeumannBC);
 
 	if isa(Ainv,ShiftedLaplacianMultigridSolver)
-		Ainv.helmParam = HelmholtzParam(M,gamma,m,omega,true,useSommerfeldBC);
+		Ainv.helmParam = HelmholtzParam(M,gamma,m,omega,true,useSommerfeldBC,useOrderNeumannBC);
 		H = H + GetHelmholtzShiftOP(m, omega,Ainv.shift[1]);
 		H = sparse(H');
 		# H is actually shifted laplacian now...
@@ -100,7 +82,7 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 		else
 			U = convert(Array{FieldsType},Matrix(Qs[:,batchIdxs]));
 		end
-		U = get_rhs(M.n[1], M.n[2], M.h; blocks=length(batchIdxs)) # check point source
+
 		println("In getData NEW - before solveLinearSystem - H-$(size(H)) U-$(size(U)) batch-$(length(batchIdxs))")
 		@time begin
 			U,Ainv = solveLinearSystem(H,U,Ainv,0)
@@ -139,10 +121,6 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 			clear!(Ainv.MG); 
 		end
 	end
-	# if doClear
-	# 	clear!(pFor);
-	# elseif isa(Ainv,ShiftedLaplacianMultigridSolver)
-	# 	clear!(Ainv.MG); 
-	# end
+
     return D,pFor
 end

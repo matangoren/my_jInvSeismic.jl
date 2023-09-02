@@ -32,11 +32,11 @@ if newSize!=[]
 end
 
 Minv = getRegularMesh(domain,collect(size(m)));
-println("In readModelAndGenerateMeshMref Minv- $(Minv.n) - $(Minv.h)")
+println("In readModelAndGenerateMeshMref Minv- $(Minv.n) - $(Minv.domain) - $(Minv.h)")
 
 (mPadded,MinvPadded) = addAbsorbingLayer(m,Minv,pad);
 (mrefPadded,MinvPadded) = addAbsorbingLayer(mref,Minv,pad);
-println("In readModelAndGenerateMeshMref MinvPadded- $(MinvPadded.n) - $(MinvPadded.h)")
+println("In readModelAndGenerateMeshMref MinvPadded- $(MinvPadded.n) - $(MinvPadded.domain)- $(MinvPadded.h)")
 
 
 N = prod(MinvPadded.n);

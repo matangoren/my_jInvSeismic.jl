@@ -1,6 +1,10 @@
+name = "jInvSeismic"
+uuid = "9a705e90-610f-11e9-2434-3b0eb5f83adc"
+authors = ["Eran Treister <erantreister@gmail.com>"]
+version = "0.3.1"
+
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
-CNNHelmholtzSolver = "14f1de96-abf7-4b99-a738-965cb88e7617"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -9,7 +13,6 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FactoredEikonalFastMarching = "a21af1b0-b122-11e9-3f46-a5fb68b7f21f"
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Helmholtz = "e64c32b0-b297-11e9-3d04-db45b5588c0d"
 JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 KrylovMethods = "9a2cd570-f05c-5dc1-9209-93ad6f5727f7"

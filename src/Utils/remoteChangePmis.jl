@@ -1,4 +1,4 @@
-export updateWd,multWd,setSources,setSourcesSame,setDobs,setWd
+export updateWd,multWd,setSources,setSourcesSame,setDobs,setWd,setSolverModel
 function updateWd(pMis::Array{RemoteChannel},Dc::Array{RemoteChannel})
 @sync begin
 		for k=1:length(pMis)
@@ -105,6 +105,25 @@ pMis  = take!(pMisRF)
 pMis.pFor.Sources = newSources;
 put!(pMisRF,pMis)
 return pMisRF;
+end
+
+# for CnnHelmholtzSolver
+function setSolverModel(pMis::Array{RemoteChannel},newModel)
+	@sync begin
+			for k=1:length(pMis)
+		@async begin
+				pMis[k] = remotecall_fetch(setSolverModel,pMis[k].where,pMis[k],newModel);
+			end
+		end
+	end
+	return pMis;
+end
+	
+function setSolverModel(pMisRF::RemoteChannel,newModel)
+	pMis  = take!(pMisRF)
+	pMis.pFor.ForwardSolver.model = newModel;
+	put!(pMisRF,pMis)
+	return pMisRF;
 end
 
 

@@ -40,6 +40,9 @@ function getSensMatVec(v::Vector,m::Vector,pFor::FWIparam)
 	elseif isa(Ainv,JuliaSolver)
 		H = GetHelmholtzOperator(M,m_t,omega, gamma_t, true,useSommerfeldBC);
 	end
+
+	println("========= In getSensMatVec =========")
+
 	Jv = zeros(ComplexF64,nrec,nsrc);
 	t = ((1.0.-1im*vec(gamma_t./omega)).*(An2cc'*v));
 	for k_batch = 1:numBatches

@@ -1,4 +1,4 @@
-import CNNHelmholtzSolver: solveLinearSystem
+# import CNNHelmholtzSolver: solveLinearSystem
 export getSensTMatVec
 
 function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
@@ -39,6 +39,8 @@ function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
 	elseif isa(Ainv,JuliaSolver)
 		H = GetHelmholtzOperator(M,m_nodal,omega, gamma_nodal, true,useSommerfeldBC);
 	end
+
+	println("========= In getSensTMatVec =========")
 
 	JTv = zeros(Float64,prod(M.n))
 	Vdatashape = reshape(v,nrec,nsrc);
