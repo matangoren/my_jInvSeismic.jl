@@ -3,7 +3,7 @@ using LinearAlgebra
 
 function setupFWI(m,filenamePrefix::String,plotting::Bool,
 		workersFWI::Array{Int64,1}=workers(),maxBatchSize::Int64 = 48,
-		Ainv::AbstractSolver = getJuliaSolver(), misfun::Function=SSDFun,useFilesForFields::Bool = false,useFreqOnlySplit::Bool = true)
+		Ainv::AbstractSolver = getJuliaSolver(), misfun::Function=SSDFun,useFilesForFields::Bool = false,useFreqOnlySplit::Bool = true, ABLpad=16)
 
 
 file = matopen(string(filenamePrefix,"_PARAM.mat"));
@@ -65,7 +65,7 @@ mref = Iact'*mref[:];
 
 println("Set up FWI:");
 
-(Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(Minv,omega,Q,P,gamma);
+(Mfwds,gammas,Qs,Ps) = getMeshAdaptedParams(m, Minv,omega,Q,P,gamma, ABLpad);
 
 batch = min(size(Q,2),maxBatchSize);
 if useFreqOnlySplit

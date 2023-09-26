@@ -85,6 +85,10 @@ useFilesForFields = false; # wheter to save fields to files
 
 # newSize = [352,240] # newSize[1]+2*pad and newSize[2]+pad needs to divide by 16
 newSize = [608, 304] # after newSize[1]+2*pad and newSize[2]+pad it will be 608X304
+# newSize = [38;19]*16
+
+newSizePadded = newSize + [2*pad;pad]
+
 
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
@@ -92,9 +96,16 @@ newSize = [608, 304] # after newSize[1]+2*pad and newSize[2]+pad it will be 608X
 println("size of m $(size(m))")
 println("maximum of mref $(maximum(mref))")
 
-omega = [4.977778, 5.688889, 6.4, 6.7555556]*2*pi;#/(1+2*pad/newSize[1]);
-# omega = [2.8444445, 3.2, 3.5555553, 3.911111, 4.266667, 4.622222, 4.977778, 5.688889, 6.4, 6.7555556]*2*pi;
-# omega = [2.4375, 2.925, 3.4125, 3.9]*2*pi; # for 352X240
+# omega = [4.977778, 5.688889, 6.4, 6.7555556]*2*pi;#/(1+2*pad/newSize[1]);
+
+omega_max = 6.7555556*2*pi;
+n1 = newSizePadded[1]/16 # = 42
+println("n1 = $(n1)")
+# omega = (sort([n1-2*i for i=0:13],rev=false)/n1)*omega_max
+
+omega =([16, 18, 20, 22, n1]/n1)*omega_max
+println("omega = $(omega ./ (2*pi))")
+
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
 alpha1 = 5e0;
@@ -107,7 +118,7 @@ freqContSweeps = 5;
 freqRanges = [(1,4), (1,4), (4,length(omega)), (4,length(omega)),
 		(length(omega), length(omega))];
 regularizations = ["high", "high", "low", "low", "low"];
-GNiters = [8, 8, 8 ,8, 8];
+GNiters = [4, 8, 8 ,8, 8];
 # GNiters = [50, 50, 15 ,15, 100];
 
 # ###################################################################################################################
@@ -119,7 +130,7 @@ writedlm(string(resultsFilename,"_mref.dat"),convert(Array{Float16},mref));
 resultsFilename = string(resultsFilename,".dat");
 
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
-ABLpad = pad + 4;
+ABLpad = 16 #pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
 # Ainv = getJuliaSolver()
 Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
@@ -139,7 +150,7 @@ plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5]
 
 println("AFTER INITIAL GET DATA")
 (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
-	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true);
+	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true, ABLpad);
 
 println("AFTER setupFWI")
 println("mref size = $(size(mref))")

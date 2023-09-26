@@ -549,22 +549,22 @@ for freqIdx = startFrom:endAt
 				resultsFilename, cycle, freqIdx, dumpFun)
 	end
 	# retrain here
-	# println("===== AFTER GN TYPES =====")
-	# println("typeof pMis end = $(typeof(pMisTemp[end]))")
-	# println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
+	println("===== AFTER GN TYPES =====")
+	println("typeof pMis end = $(typeof(pMisTemp[end]))")
+	println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
 	
-	# pMisTemp_maxOmega = pMisTempFetched[end]
-	# println(typeof(pMisTemp_maxOmega))
-	# println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
-	# pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=5, initial_set_size=64, lr=1e-6)
+	pMisTemp_maxOmega = pMisTempFetched[end]
+	println(typeof(pMisTemp_maxOmega))
+	println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
+	pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=5, initial_set_size=64, lr=1e-6)
 
-	# # pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
-	# pMisFetched = map(fetch, pMis);
+	# pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
+	pMisFetched = map(fetch, pMis);
 
-	# for cur_pMisFetched in pMisFetched
-	# 	# update current solvers' model
-	# 	cur_pMisFetched.pFor.ForwardSolver.model = pMisTemp_maxOmega.pFor.ForwardSolver.model
-	# end
+	for cur_pMisFetched in pMisFetched
+		# update current solvers' model
+		cur_pMisFetched.pFor.ForwardSolver.model = pMisTemp_maxOmega.pFor.ForwardSolver.model
+	end
 	
 end
 
