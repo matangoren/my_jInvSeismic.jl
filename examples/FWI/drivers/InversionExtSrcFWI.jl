@@ -96,15 +96,15 @@ newSizePadded = newSize + [2*pad;pad]
 println("size of m $(size(m))")
 println("maximum of mref $(maximum(mref))")
 
-# omega = [4.977778, 5.688889, 6.4, 6.7555556]*2*pi;#/(1+2*pad/newSize[1]);
+
 
 omega_max = 6.7555556*2*pi;
 n1 = newSizePadded[1]/16 # = 42
 println("n1 = $(n1)")
-# omega = (sort([n1-2*i for i=0:13],rev=false)/n1)*omega_max
 
 omega =([16, 18, 20, 22, n1]/n1)*omega_max
 println("omega = $(omega ./ (2*pi))")
+
 
 offset  = newSize[1];
 println("Offset is: ",offset," cells.")
