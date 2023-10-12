@@ -40,6 +40,11 @@ function getSensMatVec(v::Vector,m::Vector,pFor::FWIparam)
 	elseif isa(Ainv,JuliaSolver)
 		H = GetHelmholtzOperator(M,m_t,omega, gamma_t, true,useSommerfeldBC);
 	end
+	
+	if isa(Ainv, CnnHelmholtzSolver)
+		Ainv.fromFunction = "SensMatVec"
+		println("before - fromFunction = $(Ainv.fromFunction)")
+	end
 
 	println("========= In getSensMatVec =========")
 

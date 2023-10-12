@@ -536,7 +536,7 @@ for freqIdx = startFrom:endAt
 	println("===== BEFORE GN TYPES =====")
 	println("typeof pMis end = $(typeof(pMisTemp[end]))")
 	println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
-	
+
 	if FWImethod == "FWI"
 		pInv.maxIter = itersNum;
 		mc,Dc,flag,HIS = standardGNrun(method, mc, simSrcDim,
@@ -548,6 +548,7 @@ for freqIdx = startFrom:endAt
 				Z1,alpha1, alpha2, stepReg, pInv, pMisTemp, HIS,
 				resultsFilename, cycle, freqIdx, dumpFun)
 	end
+	
 	# retrain here
 	println("===== AFTER GN TYPES =====")
 	println("typeof pMis end = $(typeof(pMisTemp[end]))")
@@ -556,7 +557,7 @@ for freqIdx = startFrom:endAt
 	pMisTemp_maxOmega = pMisTempFetched[end]
 	println(typeof(pMisTemp_maxOmega))
 	println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
-	pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=5, initial_set_size=64, lr=1e-6)
+	pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=30, initial_set_size=128, lr=1e-4, data_epochs=4)
 
 	# pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
 	pMisFetched = map(fetch, pMis);

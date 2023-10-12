@@ -43,6 +43,9 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 	if isa(Ainv, CnnHelmholtzSolver)
 		Helmholtz_param = HelmholtzParam(M,gamma,m,omega,true,useSommerfeldBC)
 		Ainv = setMediumParameters(Ainv, Helmholtz_param)
+		Ainv.solver_tol = 1e-8
+		Ainv.fromFunction = "getData"
+		println("before - solver tol = $(Ainv.solver_tol)")
 	end
 
 	if select==[]
@@ -102,6 +105,11 @@ function getData(m,pFor::FWIparam,doClear::Bool=false)
 
 	if isa(Ainv,ShiftedLaplacianMultigridSolver)
 		Ainv.MG.relativeTol *= 1e+4;
+	end
+
+	if isa(Ainv, CnnHelmholtzSolver)
+		Ainv.solver_tol = 1e-4
+		println("after - solver tol = $(Ainv.solver_tol)")
 	end
 
 	pFor.ForwardSolver = Ainv;

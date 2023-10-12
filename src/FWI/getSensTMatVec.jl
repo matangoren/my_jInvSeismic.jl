@@ -40,6 +40,11 @@ function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
 		H = GetHelmholtzOperator(M,m_nodal,omega, gamma_nodal, true,useSommerfeldBC);
 	end
 
+	if isa(Ainv, CnnHelmholtzSolver)
+		Ainv.fromFunction = "SensTMatVec"
+		println("before - fromFunction = $(Ainv.fromFunction)")
+	end
+
 	println("========= In getSensTMatVec =========")
 
 	JTv = zeros(Float64,prod(M.n))
