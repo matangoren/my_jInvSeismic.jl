@@ -22,7 +22,6 @@ using KrylovMethods
 using_gpu = true
 if using_gpu == true
 	using CUDA
-	# ENV["JULIA_CUDA_MEMORY_POOL"] = "split"
 	CUDA.allowscalar(true)
 end
 
@@ -93,7 +92,7 @@ newSizePadded = newSize + [2*pad;pad]
  (m,Minv,mref,boundsHigh,boundsLow) = readModelAndGenerateMeshMref(modelDir,
  	"examples/SEGmodel2Dsalt.dat",dim,pad,[0.0,13.5,0.0,4.2],newSize,1.752,2.9);
 
-println("size of m $(size(m))")
+println("size of m $(size(m)) mref $(size(mref))")
 println("maximum of mref $(maximum(mref))")
 
 
@@ -102,7 +101,7 @@ omega_max = 6.7555556*2*pi;
 n1 = newSizePadded[1]/16 # = 42
 println("n1 = $(n1)")
 
-omega =([16, 18, 20, 22, n1]/n1)*omega_max
+omega =([i for i=16:2:n1]/n1)*omega_max
 println("omega = $(omega ./ (2*pi))")
 
 
@@ -115,10 +114,10 @@ EScycles = 2;
 cgit = 7;
 
 freqContSweeps = 5;
-freqRanges = [(1,4), (1,4), (4,length(omega)), (4,length(omega)),
-		(length(omega), length(omega))];
+# freqRanges = [(1,4), (1,4), (4,length(omega)), (4,length(omega)),(length(omega), length(omega))];
+freqRanges = [(1,4), (1,4), (1,length(omega)), (1,length(omega)),(length(omega)-3, length(omega))];
 regularizations = ["high", "high", "low", "low", "low"];
-GNiters = [4, 8, 8 ,8, 8];
+GNiters = [20, 20, 15 ,15, 100];
 # GNiters = [50, 50, 15 ,15, 100];
 
 # ###################################################################################################################
@@ -132,8 +131,8 @@ resultsFilename = string(resultsFilename,".dat");
 println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.^2))));
 ABLpad = 16 #pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
-# Ainv = getJuliaSolver()
-Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
+Ainv = getJuliaSolver()
+# Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
@@ -149,6 +148,8 @@ plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5]
 
 
 println("AFTER INITIAL GET DATA")
+Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
+
 (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
 	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true, ABLpad);
 
@@ -264,7 +265,6 @@ else
 end
 println("BEFORE FREQ_CONT")
 for i = 1:freqContSweeps
-	# maybe put retrain here
 	freqContParams.cycle = i - 1;
 	freqContParams.itersNum = GNiters[i];
 	freqContParams.startFrom = freqRanges[i][1];
@@ -283,5 +283,5 @@ for i = 1:freqContSweeps
 	end
 	global mc, = freqCont(freqContParams);
 	freqContParams.mc = mc;
-	exit()
+	# exit()
 end
