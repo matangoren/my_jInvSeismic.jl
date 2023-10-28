@@ -527,11 +527,11 @@ for freqIdx = startFrom:endAt
 	pMisTemp = pMis[currentProblems];
 	println("\n======= New Continuation Stage: selecting continuation batches: ",reqIdx1," to ",reqIdx2,"=======\n");
 	
-	pMisTempFetched = map(fetch, pMisTemp);
-	for cur_pMis in pMisTempFetched
-		cur_pMis.pFor.ForwardSolver.cycle = cycle
-		cur_pMis.pFor.ForwardSolver.freqIndex = freqIdx
-	end
+	# pMisTempFetched = map(fetch, pMisTemp);
+	# for cur_pMis in pMisTempFetched
+	# 	cur_pMis.pFor.ForwardSolver.cycle = cycle
+	# 	cur_pMis.pFor.ForwardSolver.freqIndex = freqIdx
+	# end
 
 	println("===== BEFORE GN TYPES =====")
 	println("typeof pMis end = $(typeof(pMisTemp[end]))")
@@ -550,22 +550,26 @@ for freqIdx = startFrom:endAt
 	end
 	
 	# retrain here
-	println("===== AFTER GN TYPES =====")
-	println("typeof pMis end = $(typeof(pMisTemp[end]))")
-	println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
+	# println("===== AFTER GN TYPES =====")
+	# println("typeof pMis end = $(typeof(pMisTemp[end]))")
+	# println("typeof pMis end = $(typeof(fetch(pMisTemp[end])))")
 	
-	pMisTemp_maxOmega = pMisTempFetched[end]
-	println(typeof(pMisTemp_maxOmega))
-	println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
-	pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=30, initial_set_size=128, lr=1e-4, data_epochs=4)
+	# pMisTemp_maxOmega = pMisTempFetched[end]
+	# println(typeof(pMisTemp_maxOmega))
+	# println("retrain for omega = $(pMisTemp_maxOmega.pFor.ForwardSolver.omega)")
+	
+	# lr = 1e-4
+	# if cycle >= 2
+	# 	lr = 1e-5
+	# end
+	# pMisTemp_maxOmega.pFor.ForwardSolver = retrain(cycle, freqIdx, pMisTemp_maxOmega.pFor.ForwardSolver; iterations=30, initial_set_size=128, lr=lr, data_epochs=4)
+	# # pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
+	# pMisFetched = map(fetch, pMis);
 
-	# pMis = setSolverModel(pMis, pMisTemp_maxOmega.pFor.ForwardSolver.model);
-	pMisFetched = map(fetch, pMis);
-
-	for cur_pMisFetched in pMisFetched
-		# update current solvers' model
-		cur_pMisFetched.pFor.ForwardSolver.model = pMisTemp_maxOmega.pFor.ForwardSolver.model
-	end
+	# for cur_pMisFetched in pMisFetched
+	# 	# update current solvers' model
+	# 	cur_pMisFetched.pFor.ForwardSolver.model = pMisTemp_maxOmega.pFor.ForwardSolver.model
+	# end
 	
 end
 

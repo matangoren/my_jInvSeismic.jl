@@ -26,6 +26,7 @@ function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
 
 	numBatches 	= ceil(Int64,nsrc/batchSize);
 	An2cc = getNodalAverageMatrix(M);
+	# An2cc = getNodalAverageMatrix(M; avN2C=avN2C_Nearest);
 	m_nodal = An2cc'*m;
 	gamma_nodal = An2cc'*gamma;
 	n_nodal = prod(M.n.+1);
@@ -42,10 +43,8 @@ function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
 
 	if isa(Ainv, CnnHelmholtzSolver)
 		Ainv.fromFunction = "SensTMatVec"
-		println("before - fromFunction = $(Ainv.fromFunction)")
 	end
 
-	println("========= In getSensTMatVec =========")
 
 	JTv = zeros(Float64,prod(M.n))
 	Vdatashape = reshape(v,nrec,nsrc);
@@ -65,6 +64,7 @@ function getSensTMatVec(v::Vector,m::Vector,pFor::FWIparam)
 		# Original code:  V = conj((1.0.-1im*vec(gamma./omega)).*U).*V;
 		V = An2cc*(conj(U).*(1.0.+1im*vec(gamma_nodal./omega)).*V);
 		JTv .+= omega^2*vec(real(sum(V,dims=2)));
+		
 	end
 
 	if isa(Ainv,ShiftedLaplacianMultigridSolver)

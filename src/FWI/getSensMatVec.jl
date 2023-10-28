@@ -27,6 +27,8 @@ function getSensMatVec(v::Vector,m::Vector,pFor::FWIparam)
 
 	# derivative of mass matrix
 	An2cc = getNodalAverageMatrix(M);
+	# An2cc = getNodalAverageMatrix(M; avN2C=avN2C_Nearest);
+
 	## ALL AT ONCE CODE
 	H = spzeros(ComplexF64,prod(M.n.+1),prod(M.n.+1));
 	gamma_t = An2cc'*gamma;
@@ -43,10 +45,8 @@ function getSensMatVec(v::Vector,m::Vector,pFor::FWIparam)
 	
 	if isa(Ainv, CnnHelmholtzSolver)
 		Ainv.fromFunction = "SensMatVec"
-		println("before - fromFunction = $(Ainv.fromFunction)")
 	end
 
-	println("========= In getSensMatVec =========")
 
 	Jv = zeros(ComplexF64,nrec,nsrc);
 	t = ((1.0.-1im*vec(gamma_t./omega)).*(An2cc'*v));
@@ -61,6 +61,7 @@ function getSensMatVec(v::Vector,m::Vector,pFor::FWIparam)
 			U = pFor.Fields[:,batchIdxs];
 		end
 		U = t.*U;
+
 		U,Ainv = solveLinearSystem(H,U,Ainv,0);
 		Jv[:,batchIdxs] = omega^2*(P'*U);
 	end

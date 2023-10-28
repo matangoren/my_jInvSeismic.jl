@@ -13,31 +13,39 @@ roundToNearestDivisable = (x::Array) -> (floor.(Int64,(x.-1)/MakeSureDividesIn.+
 
 
 for k = 1:nfreqs
-	omega_k = omega[k];
-	ratio = omega_k/omega_max;
-	if ratio < 0.95
-		Minv_nodal = getRegularMesh(Minv.domain,Minv.n.+1);
-		# Minv_nodal.h = Minv.h ./ ratio
-		# roundToNearestDivisable
-		Mfwd = getRegularMesh(Minv.domain,roundToNearestDivisable(Minv.n*ratio));
-		# Mfwd.h = Minv.h ./ ratio
-		println("===== In MeshAdapted $(roundToNearestDivisable(Minv.n*ratio)) =====")
-		println("===== In MeshAdapted $(Mfwd.h) --- $(Minv.h) =====")
-		Mfwd_nodal = getRegularMesh(Minv.domain,Mfwd.n.+1);
-		# Mfwd_nodal.h = Minv.h ./ ratio
-		Interp = prepareMesh2Mesh(Mfwd, Minv,false);
-		Interp_nodal = prepareMesh2Mesh(Mfwd_nodal, Minv_nodal,false);
-		
-		ABLamp =  omega_k
-		println("############################### ABLamp = $(ABLamp) --- $(getMaximalFrequency(1.0./(minimum(m).^2),Mfwd))")
-		println("############################### ABLpad = $(ABLpad)")
-		gamma_k = getABL(Mfwd.n,true,ones(Int64,Mfwd.dim)*ABLpad,ABLamp) .+ 0.01*4*pi;
+	# test --- test
+	# omega_k = omega[k];
+	# ratio = omega_k/omega_max;
+	# # if ratio < 0.95
+	# Minv_nodal = getRegularMesh(Minv.domain,Minv.n.+1);
+	# # Minv_nodal.h = Minv.h ./ ratio
+	# # roundToNearestDivisable
+	# Mfwd = getRegularMesh(Minv.domain,roundToNearestDivisable(Minv.n*ratio));
+	# # Mfwd.h = Minv.h ./ ratio
+	# println("===== In MeshAdapted $(roundToNearestDivisable(Minv.n*ratio)) =====")
+	# println("===== In MeshAdapted $(Mfwd.h) --- $(Minv.h) =====")
+	# Mfwd_nodal = getRegularMesh(Minv.domain,Mfwd.n.+1);
+	# # Mfwd_nodal.h = Minv.h ./ ratio
+	# Interp = prepareMesh2Mesh(Mfwd, Minv,false);
+	# Interp_nodal = prepareMesh2Mesh(Mfwd_nodal, Minv_nodal,false);
+	
+	# ABLamp =  omega_k
+	# println("############################### ABLamp = $(ABLamp) --- $(getMaximalFrequency(1.0./(minimum(m).^2),Mfwd))")
+	# println("############################### ABLpad = $(ABLpad)")
+	# gamma_k = getABL(Mfwd.n,true,ones(Int64,Mfwd.dim)*ABLpad,ABLamp) .+ 0.01*4*pi;
 
-		gammas[k] = vec(gamma_k) #interpGlobalToLocal(vec(gamma),Interp);
-		Qs[k]     = interpGlobalToLocal(Q,Interp_nodal);
-		Ps[k]     = interpGlobalToLocal(P,Interp_nodal);
-		println("************************** Mesh2Mesh size of Interp: ",size(Interp))
-		Mfwds[k] = Mfwd;
+	# gammas[k] = vec(gamma_k) #interpGlobalToLocal(vec(gamma),Interp);
+	# Qs[k]     = interpGlobalToLocal(Q,Interp_nodal);
+	# Ps[k]     = interpGlobalToLocal(P,Interp_nodal);
+	# println("************************** Mesh2Mesh size of Interp: ",size(Interp))
+	# Mfwds[k] = Mfwd;
+	# test --- test
+
+	Qs[k] = Q;
+	Ps[k] = P;
+	gammas[k] = vec(gamma);
+	Mfwds[k] = Minv;
+
 	# if ratio < 0.75
 		# Mfwd = Minv
 		# Minv_nodal = getRegularMesh(Minv.domain,Minv.n.+1);
@@ -62,13 +70,13 @@ for k = 1:nfreqs
 		# Qs[k] = interpGlobalToLocal(Q,Interp_nodal);
 		# Ps[k] = interpGlobalToLocal(P,Interp_nodal);
 		# Mfwds[k] = Mfwd;
-	else
-		println("************************** Mesh2Mesh no change *******************************")
-		Qs[k] = Q;
-		Ps[k] = P;
-		gammas[k] = vec(gamma);
-		Mfwds[k] = Minv;
-	end
+	# else
+	# 	println("************************** Mesh2Mesh no change *******************************")
+	# 	Qs[k] = Q;
+	# 	Ps[k] = P;
+	# 	gammas[k] = vec(gamma);
+	# 	Mfwds[k] = Minv;
+	# end
 end
 return (Mfwds,gammas,Qs,Ps)
 end

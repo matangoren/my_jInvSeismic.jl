@@ -52,7 +52,7 @@ end
 # 	using Flux
 # end
 
-plotting = true;
+plotting = true
 if plotting
 	using jInvVisPyPlot
 	using PyPlot
@@ -84,7 +84,6 @@ useFilesForFields = false; # wheter to save fields to files
 
 # newSize = [352,240] # newSize[1]+2*pad and newSize[2]+pad needs to divide by 16
 newSize = [608, 304] # after newSize[1]+2*pad and newSize[2]+pad it will be 608X304
-# newSize = [38;19]*16
 
 newSizePadded = newSize + [2*pad;pad]
 
@@ -102,6 +101,9 @@ n1 = newSizePadded[1]/16 # = 42
 println("n1 = $(n1)")
 
 omega =([i for i=16:2:n1]/n1)*omega_max
+# omega =([18,20,22,24,26,28,32,36,42]/n1)*omega_max
+
+# omega =([14,16,18,22,24,26,28,32,36,42]/n1)*omega_max
 println("omega = $(omega ./ (2*pi))")
 
 
@@ -114,8 +116,7 @@ EScycles = 2;
 cgit = 7;
 
 freqContSweeps = 5;
-# freqRanges = [(1,4), (1,4), (4,length(omega)), (4,length(omega)),(length(omega), length(omega))];
-freqRanges = [(1,4), (1,4), (1,length(omega)), (1,length(omega)),(length(omega)-3, length(omega))];
+freqRanges = [(1,4), (1,4), (4,length(omega)), (4,length(omega)),(length(omega), length(omega))];
 regularizations = ["high", "high", "low", "low", "low"];
 GNiters = [20, 20, 15 ,15, 100];
 # GNiters = [50, 50, 15 ,15, 100];
@@ -132,7 +133,6 @@ println("omega*maximum(h): ",omega*maximum(Minv.h)*sqrt(maximum(1.0./(boundsLow.
 ABLpad = 16 #pad + 4;
 # Ainv  = getParallelJuliaSolver(ComplexF64,Int64,numCores=16,backend=1);
 Ainv = getJuliaSolver()
-# Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
 
 workersFWI = workers();
 println(string("The workers that we allocate for FWI are:",workersFWI));
@@ -143,12 +143,12 @@ plotModel(m,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],fi
 figure(2,figsize = (22,10));
 plotModel(mref,includeMeshInfo=true,M_regular = Minv,cutPad=pad,limits=[1.5,4.5],figTitle="mref",filename="mref.png");
 
-Mfwds_MaxOmega, mrefTemp, gamma_MaxOmega = prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
-									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
+# Mfwds_MaxOmega, mrefTemp, gamma_MaxOmega = prepareFWIDataFiles(m,Minv,mref,boundsHigh,boundsLow,dataFilenamePrefix,omega,ones(ComplexF64,size(omega)),
+# 									pad,ABLpad,jumpSrc,jumpRcv,offset,workersFWI,maxBatchSize,Ainv,useFilesForFields);
 
 
 println("AFTER INITIAL GET DATA")
-Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
+# Ainv = getCnnHelmholtzSolver("VU"; solver_tol=1e-4, relaxation_tol=1e-8);
 
 (Q,P,pMis,SourcesSubInd,contDiv,Iact,sback,mref,boundsHigh,boundsLow) =
 	setupFWI(m,dataFilenamePrefix,plotting,workersFWI,maxBatchSize,Ainv,SSDFun,useFilesForFields, true, ABLpad);
@@ -283,5 +283,4 @@ for i = 1:freqContSweeps
 	end
 	global mc, = freqCont(freqContParams);
 	freqContParams.mc = mc;
-	# exit()
 end
